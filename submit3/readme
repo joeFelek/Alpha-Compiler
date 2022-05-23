@@ -1,0 +1,22 @@
+###
+#   Felekidis Iosif 4062
+###
+
+
+# Phase 3
+
+
+## How to run:
+
+    make
+    ./alpha < testfile
+
+## Comments: 
+
+    Ta ilopoihsa ola.
+        * ola ta quads opws tis dialekseis;
+        * meriki apotimisi;
+        * temporary vars reuse;
+        * const arithmetic caclution;
+        * jumps for functions and returns;
+        * extra error checking;
