@@ -8,6 +8,4 @@
     <span>Iosif Felekidis</span>
     ·
     <span>4062</span>
-    ·
-    <span>2022</span>
   </p>
