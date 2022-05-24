@@ -106,14 +106,22 @@ SymbolTableEntry* symtable_IDLIST(char* name);
 %%
 
 program	: /*empty*/		{}
-		| stmts 		{}
+		| stmts 		{free($1);}
 		;
 
-stmts :	stmt 			{$$ = $1;}
+stmts :	stmt 			
+			{
+				$$ = make_stmt();
+				$$->breaklist = $1->breaklist;
+				$$->contlist = $1->contlist;
+				free($1);
+			}
 	  |	stmts stmt		
 			{
-				$$->breaklist = mergelist($1->breaklist, $2->breaklist);
-				$$->contlist = mergelist($1->contlist, $2->contlist);
+				$1->breaklist = mergelist($1->breaklist, $2->breaklist);
+				$1->contlist = mergelist($1->contlist, $2->contlist);
+				$$ = $1;
+				free($2);
 			}
 	  ;	
 
@@ -251,6 +259,7 @@ call 	: call '(' ')'			{$$ = make_call($1, NULL);}
 					}
 				}
 				$$ = make_call($1, $2->elist);
+				free($2);
 			}
 
 		| '(' funcdef ')' '(' ')'			
@@ -314,6 +323,7 @@ objectdef 	: '[' ']'
 						emit(tablesetelem, t, i->index, i->value, 0, 0);
 					}
 					$$ = t;
+					free($2);
 				}
 		    ;
 
@@ -476,6 +486,7 @@ forstmt   : forprefix N E ')' N loopstmt N
 					patchLabel($7, $2+1);
 					patchlist($6->breaklist, nextQuadLabel());
 					patchlist($6->contlist, $2+1);
+					free($1);
 				}
           ;
 
@@ -577,7 +588,7 @@ unsigned patchFuncJump(incomplFuncJumps_t *index) {
 	return patch;
 }
 
-void backpatchIncomplFuncJumps() {
+void backpatchIncomplFuncJumps(void) {
 	incomplFuncJumps_t* index = incomplFuncJumpsHead;
 
 	while(index) {
@@ -586,6 +597,8 @@ void backpatchIncomplFuncJumps() {
 		index = index->prev;
 	}
 }
+
+
 
 expr* do_prefixcalculation(expr* e, iopcode op) {
 	expr* result;
@@ -774,6 +787,7 @@ SymbolTableEntry* symtable_ID(char* name) {
 		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
 		sprintf(line, "%d", e->value.varVal->line);
 		yyerror("syntax error, cannot access ", symbolTypeToString(e->type)," ", CYN, e->value.varVal->name, RESET ," declared at line ", line);
+		free(line);
 		return NULL;
 	}
 	return e;
@@ -818,6 +832,7 @@ SymbolTableEntry* symtable_FUNC(char* name) {
 		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
 		sprintf(line, "%d", e->value.varVal->line);
 		yyerror("syntax error, redeclared ", CYN, name, RESET, ", first declared as ", symbolTypeToString(e->type), " at line ", line);
+		free(line);
 		return newSymEntry(name, yylineno, USERFUNC, current_scope, func_scope);
 	}
 	return insert(name, yylineno, USERFUNC);
@@ -847,6 +862,51 @@ void initSymTable(void) {
 	anonymousFuncBuf = malloc(sizeof(char));
 }
 
+void freeSymbols(void) {
+	for(int i=0; i<scopeList->len; i++) {
+		SymbolTableEntry *e = scopeList->scopes[i].head;
+		while(e) {
+			SymbolTableEntry *tmp;
+			tmp = e->next_inScope;
+
+			if(e->type == USERFUNC || e->type == LIBFUNC) { 
+				free((void*)e->value.funcVal->name);
+				free(e->value.funcVal);
+			} else { 
+				free((void*)e->value.varVal->name);
+				free(e->value.varVal);
+			}
+			free(e);
+			e = tmp;
+		}
+	}
+}
+
+void freeFuncJumps(void) {
+	incomplFuncJumps_t* index = incomplFuncJumpsHead;
+
+	while(index) {
+		incomplFuncJumps_t* tmp = index->prev;
+		if(index->retLabels)
+			free(index->retLabels);
+		free(index);
+		index = tmp;
+	}
+}
+
+void freeAll(void) {	
+	free(anonymousFuncBuf);
+	freetempname();
+	freeStacks();
+	freeFuncJumps();
+	freeSymbols();
+	free(scopeList->scopes);
+	free(scopeList);
+	free(funcScopeList->scopes);
+	free(funcScopeList);
+	free(symTable);
+}
+
 int main (void) {
 	
 	initSymTable();
@@ -873,7 +933,9 @@ int main (void) {
 	
 	backpatchIncomplFuncJumps();
 	printScopeList(scopeList);
-	printQuads(); 
+	printQuads();
+
+	freeAll();
 	return 0;
 }
 

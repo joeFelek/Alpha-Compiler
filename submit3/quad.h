@@ -87,6 +87,11 @@ typedef struct incomplFuncJumps_t {
     struct incomplFuncJumps_t *prev;
 }incomplFuncJumps_t;
 
+struct Stack {
+    size_t len;
+    unsigned *stack;
+};
+
 /** emit **/
 extern quad* quads;
 extern unsigned total;
@@ -110,7 +115,7 @@ void resetTemp(void);
 SymbolTableEntry* newTemp(void);
 unsigned istempname (const char* s);
 unsigned istempexpr (expr* e);
-
+void freetempname(void);
 
 /** scope space and offset **/
 extern unsigned programVarOffset;
@@ -162,5 +167,8 @@ void backpatch(shortcircuit_t* list, unsigned label);
 
 /** helper **/
 int isInteger(double val);
+void freeStacks(void);
+void push(struct Stack *s, unsigned value);
+unsigned pop(struct Stack *s);
 
 #endif

@@ -37,9 +37,10 @@ void printExpr(expr* e) {
 				printf(" %-15.2f", e->val.numConst);
 			break;
 		case conststring_e: 
-			char* s = malloc(strlen(e->val.strConst)+2);
+			char* s = malloc(strlen(e->val.strConst)+3);
 			sprintf(s, "\"%s\"", e->val.strConst);
 			printf(" %-15s", s); 
+			free(s);
 			break;
 		case constbool_e:
 			if(e->val.boolConst) 
@@ -146,14 +147,16 @@ unsigned istempexpr (expr* e) {
 	return e->sym && istempname(e->sym->value.varVal->name);
 }
 
+void freetempname(void) {
+	free(tempname);
+}
 
 /** scope space and offset **/
 unsigned programVarOffset    = 0;
 unsigned functionLocalOffset = 0;
 unsigned formalArgOffset     = 0;
 unsigned scopeSpaceCounter   = 1;
-unsigned *offsetStack 		 = (unsigned*) 0; 
-size_t offsetStack_len 		 = 0;
+struct Stack offset_stack;
 
 scopespace_t currScopeSpace(void) {
 	if (scopeSpaceCounter == 1)
@@ -209,20 +212,11 @@ void restoreCurrScopeOffset(unsigned n) {
 }
 
 void pushCurrScopeOffset(void) {
-
-	if(!offsetStack) {
-		offsetStack = malloc(sizeof(unsigned));
-	}else {
-		offsetStack = realloc(offsetStack, sizeof(unsigned)*offsetStack_len+1);
-	}
-	offsetStack[offsetStack_len++] = currScopeOffset(); 
+	push(&offset_stack, currScopeOffset()); 
 }
 
 unsigned popScopeOffset(void) {
-    assert(offsetStack_len > 0);
-	unsigned offset = offsetStack[offsetStack_len-1];
-    --offsetStack_len;
-	return offset;
+    return pop(&offset_stack);
 }
 
 
@@ -313,8 +307,7 @@ expr* make_call(expr* lv, expr* reversed_elist) {
 
 
 /** quad lists **/
-unsigned *loopcounterstack = (unsigned*) 0;
-unsigned loopcounterstacklen = 0;
+struct Stack loop_counter_stack;
 
 stmt_t* make_stmt(void) {
 	stmt_t *s = malloc(sizeof(stmt_t));
@@ -352,18 +345,11 @@ void patchlist (int list, int label) {
 }
 
 void pushCurrLoopCounter(unsigned loopcounter) {
-	if(!loopcounterstack) 
-		loopcounterstack = malloc(sizeof(unsigned));
-	else
-		loopcounterstack = realloc(loopcounterstack, sizeof(unsigned)*(offsetStack_len+1));
-	loopcounterstack[loopcounterstacklen++] = loopcounter; 
+	push(&loop_counter_stack, loopcounter); 
 }
 
 unsigned popLoopCounter(void) {
-	assert(loopcounterstacklen > 0);
-	unsigned counter = loopcounterstack[loopcounterstacklen-1];
-    --loopcounterstacklen;
-	return counter;
+	return pop(&loop_counter_stack);
 }
 
 
@@ -399,4 +385,25 @@ void backpatch(shortcircuit_t* list, unsigned label) {
 int isInteger(double val) {
     int truncated = (int)val;
     return (val == truncated);
+}
+
+void push(struct Stack *s, unsigned value) {
+
+    if(!s->stack) {
+        s->stack = malloc(sizeof(unsigned));
+        s->len = 0;
+    } else {
+        s->stack = realloc(s->stack, sizeof(unsigned)*(s->len+1));
+    } 
+    s->stack[s->len++] = value;
+}
+
+unsigned pop(struct Stack *s) {
+    assert(s->len > 0);
+    return s->stack[(s->len--)-1];
+} 
+
+void freeStacks(void) {
+	free(offset_stack.stack);
+	free(loop_counter_stack.stack);
 }

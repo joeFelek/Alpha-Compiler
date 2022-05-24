@@ -19,6 +19,7 @@ unsigned int anonymousFuncIter = 1;
 ScopeList* newScopeList(void) {
 	anonymousFuncBuf = NULL;
 	ScopeList* newList = malloc(sizeof(ScopeList));
+	assert(newList);
 	newList->len = 0;
 	newList->scopes = NULL;
 	return newList;
@@ -26,6 +27,7 @@ ScopeList* newScopeList(void) {
 
 Scope* addScope(ScopeList* scopeList, unsigned int scope) {
 	Scope *newscope = malloc(sizeof(Scope));
+	assert(newscope);
 	newscope->len = 0;
 	newscope->scope = scope;
 	newscope->head = NULL;
@@ -84,17 +86,18 @@ void printScopeList(ScopeList* scopeList) {
         SymbolTableEntry *e = scopeList->scopes[i].head;
         printf("------------\tScope #%d\t------------\n", scopeList->scopes[i].scope);
         while(e) {
-			if(e->type == USERFUNC) 
-			printf("\"%s\" [%s] (line %d) (scope %d) (func scope %d) (isActive %d) (locals %d) (iaddress %d)\n",
-            e->value.varVal->name, symbolTypeToString(e->type), 
-            e->value.varVal->line, e->value.varVal->scope, e->value.varVal->fscope, 
-			e->isActive, e->value.funcVal->totalLocals, e->value.funcVal->iaddress);
+			if(e->type == USERFUNC) {
+				printf("\"%s\" [%s] (line %d) (scope %d) (func scope %d) (isActive %d) (locals %d) (iaddress %d)\n",
+           	 		   e->value.varVal->name, symbolTypeToString(e->type), 
+           	 		   e->value.varVal->line, e->value.varVal->scope, e->value.varVal->fscope, 
+					   e->isActive, e->value.funcVal->totalLocals, e->value.funcVal->iaddress);
 
-			else
-            printf("\"%s\" [%s] (line %d) (scope %d) (func scope %d) (isActive %d) (%s) (offset %d)\n",
-            e->value.varVal->name, symbolTypeToString(e->type), 
-            e->value.varVal->line, e->value.varVal->scope, e->value.varVal->fscope, 
-			e->isActive, scopeSpaceToString(e->space), e->offset);
+			} else {
+            	printf("\"%s\" [%s] (line %d) (scope %d) (func scope %d) (isActive %d) (%s) (offset %d)\n",
+            		   e->value.varVal->name, symbolTypeToString(e->type), 
+            		   e->value.varVal->line, e->value.varVal->scope, e->value.varVal->fscope, 
+					   e->isActive, scopeSpaceToString(e->space), e->offset);
+			}
 			e = e->next_inScope;
         }
         printf("\n");
@@ -121,6 +124,7 @@ SymTable_S* SymTable_new(void) {
 	newitem->isActive = 0;
 	newitem->next_inHash = NULL;
     newitem->next_inScope = NULL;
+	newitem->next_inFunc = NULL;
 	newsymt->len = 0;
 	for(int i=0; i<DEFAULT_SIZE; i++) 
 		newsymt->hash_t[i] = newitem;
@@ -278,6 +282,10 @@ int equalSymEntries(SymbolTableEntry *a, SymbolTableEntry *b) {
 	if(a->value.varVal->scope != b->value.varVal->scope) return 0;
 	return 1;
 }
+
+
+
+
 
 
 
