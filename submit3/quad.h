@@ -13,14 +13,14 @@
 typedef enum iopcode {
     assign,         add,            sub, 
     mul,            division,       mod, 
-    uminus,         and,            or, 
-    not,            if_eq,          if_noteq,
-    if_lesseq,      if_greatereq,   if_less,
-    if_greater,     call,           param, 
-    ret,            getretval,      funcstart,
-    funcend,        tablecreate,
-    tablegetelem,   tablesetelem,   jump
+    if_eq,          if_noteq,       if_lesseq,
+    if_greatereq,   if_less,        if_greater,
+    call,           param,          ret,  
+    getretval,      funcstart,      funcend,
+    tablecreate,    tablegetelem,   tablesetelem,   
+    jump,           and,            or
 }iopcode;
+
 
 typedef enum expr_t {
     var_e, tableitem_e, newtable_e,

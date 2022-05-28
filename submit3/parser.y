@@ -4,6 +4,7 @@
 
 #include "symtable.h"
 #include "quad.h"
+#include "avm.h"
 
 #define yyerror(...) custom_yyerror(__VA_ARGS__, NULL)
 #define yywarning(...) custom_warning(__VA_ARGS__, NULL)
@@ -170,7 +171,7 @@ term 	: '(' expr ')'	  {$$ = $2;}
 				check_arith($2, "unary operation");
 				$$ = newexpr(arithexpr_e);
 				$$->sym = istempexpr($2) ? $2->sym : newTemp();
-				emit(uminus, $$, $2, NULL, 0, yylineno);
+				emit(mul, $$, $2, newexpr_constnum(-1), 0, yylineno);
 			}
 
 		| NOT expr 				
@@ -907,11 +908,13 @@ void freeAll(void) {
 	free(symTable);
 }
 
-int main (void) {
+int main (int argc, char **argv) {
 	
 	initSymTable();
 	yyparse();
 	
+
+
 	if(warningcounter) {
 		printf("\n\n");
 		if(warningcounter>1)
@@ -928,12 +931,43 @@ int main (void) {
 		printf("\n\n");
 		return 1;
 	}
-	if(!warningcounter)
-		printf(GREEN BOLD"\n\nParsing completed successfully..." RESET);
-	
+	if(!warningcounter) 
+		printf(GREEN BOLD"\n\nCompiled successfully" RESET "\n\n");
+
 	backpatchIncomplFuncJumps();
-	printScopeList(scopeList);
-	printQuads();
+	generateTCode();
+
+	int output_flag = 0;
+
+	if(argc > 1) {
+		for(int i=1; i<argc; ++i) {
+			if(!strcmp(argv[i], "-s"))
+				printScopeList(scopeList);
+			if(!strcmp(argv[i], "-q"))
+				printQuads();
+			if(!strcmp(argv[i], "-o"))
+				output_flag = i;
+			if(!strcmp(argv[i], "-i")) {
+				print_instructions();
+				PRINTER_NUM();
+				PRINTER_STR();
+				PRINTER_USERFUNC();
+				PRINTER_LIB();
+			}
+		}
+	}
+
+	if(output_flag) {
+		if(argc < output_flag + 1) {
+			fprintf(stderr, RED BOLD"error: "RESET"-o flag was given but no name was specified");
+			return -1;
+		}
+		generateBitCode(argv[output_flag+1]);
+	}else {
+		generateBitCode("alpha");
+	}
+
+
 
 	freeAll();
 	return 0;

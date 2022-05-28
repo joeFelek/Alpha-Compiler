@@ -8,19 +8,18 @@
 #define NEW_SIZE    (EXPAND_SIZE*sizeof(quad)+CURR_SIZE)
 
 quad* quads = (quad*) 0;
-unsigned total = 1;
-unsigned currQuad = 1;
+unsigned total = 0;
+unsigned currQuad = 0;
 
-char *iopcodeStrings[26] = {
+char *iopcodeStrings[25] = {
     "assign",         "add",            "sub", 
-    "mul",            "division",       "mod", 
-    "uminus",         "and",            "or", 
-    "not",            "if_eq",          "if_noteq",
-    "if_lesseq",      "if_greatereq",   "if_less",
-    "if_greater",     "call",           "param", 
-    "ret",            "getretval",      "funcstart",
-    "funcend",        "tablecreate",
-    "tablegetelem",   "tablesetelem", 	"jump" 
+    "mul",            "div",	        "mod", 
+	"if_eq",          "if_noteq",		"if_lesseq",
+	"if_greatereq",   "if_less", 		"if_greater",
+	"call",           "param",			"return",
+	"getretval",      "funcstart", 		"funcend",
+	"tablecreate",	  "tablegetelem",   "tablesetelem",
+	"jump", 		  "and",            "or", 			
 };
 
 void printExpr(expr* e) {
@@ -63,7 +62,7 @@ void printQuads(void) {
 	quad q;
 	printf("quad\topcode\t\tresult\t\targ1\t\targ2\t\tlabel\n");
 	printf("-----------------------------------------------------------------------------------------------\n");
-	for(int i=1; i<currQuad; ++i) {
+	for(int i=0; i<currQuad; ++i) {
 		q = quads[i];
 		
 		printf("%d: \t%-15s", i, iopcodeStrings[q.op]);
