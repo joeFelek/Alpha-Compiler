@@ -4,7 +4,7 @@
 
 #include "symtable.h"
 #include "quad.h"
-#include "avm.h"
+#include "Tcode.h"
 
 #define yyerror(...) custom_yyerror(__VA_ARGS__, NULL)
 #define yywarning(...) custom_warning(__VA_ARGS__, NULL)

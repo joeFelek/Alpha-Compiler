@@ -1,73 +1,85 @@
-#ifndef avm_h_
-#define	avm_h_
+#ifndef avm_h
+#define avm_h
 
-#include "quad.h"
-
-#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include <stdio.h>
+#include "Tcode.h"
 
-typedef enum vmopcode {
-    assign_v,       add_v,          sub_v,
-    mul_v,          div_v,          mod_v, 
-    jeq_v,          jne_v,          jle_v,
-    jge_v,          jlt_v,          jgt_v,
-    call_v,         pusharg_v,      funcenter_v,    
-    funcexit_v,     newtable_v,     tablegetelem_v, 
-    tablesetelem_v, jump_v,         nop_v
-}vmopcode;
+typedef struct avm_memcell avm_memcell;
+typedef struct avm_table avm_table;
 
-typedef enum vmarg_t {
-    label_a, 
-    global_a, 
-    formal_a, 
-    local_a, 
-    number_a, 
-    string_a, 
-    bool_a, 
-    nil_a, 
-    userfunc_a, 
-    libfunc_a, 
-    retval_a
-}vmarg_t;
+typedef enum avm_memcell_t {
+    number_m,
+    string_m,
+    bool_m,
+    table_m,
+    userfunc_m,
+    libfunc_m,
+    nil_m,
+    undef_m
+}avm_memcell_t;
 
-typedef struct vmarg {
-    vmarg_t  type;
-    unsigned val;
-}vmarg;
+struct avm_memcell {
+    avm_memcell_t type;
+    union {
+        double        numVal;
+        char*         strVal;
+        unsigned char boolVal;
+        avm_table*    tableVal;
+        unsigned      funcVal;
+        char*         libfuncVal;
+    }data;
+};
 
-typedef struct instruction {
-    vmopcode opcode;
-    vmarg    result;
-    vmarg    arg1;
-    vmarg    arg2;
-    unsigned srcLine;
-}instruction;
+typedef struct avm_table_bucket {
+    avm_memcell key;
+    avm_memcell value;
+    struct avm_table_bucket* next;
+}avm_table_bucket;
 
-typedef struct userfunc {
-    unsigned    address;
-    unsigned    localSize;
-    const char* id;
-}userfunc;
+#define AVM_TABLE_HASHSIZE 211
 
-extern double *numConsts;
-extern unsigned totalNumConsts;
-extern char **stringConsts;
-extern unsigned totalStringConsts;
-extern char **namedLibfuncs;
-extern unsigned totalNamedLibFuncs;
-extern userfunc *userFuncs;
-extern unsigned totalUserFuncs;
+struct avm_table {
+    unsigned refCounter;
+    avm_table_bucket* strIndexed[AVM_TABLE_HASHSIZE];
+    avm_table_bucket* numIndexed[AVM_TABLE_HASHSIZE];
+    // add other table types
+    unsigned total;
+};
 
-void generateTCode(void);
-void generateBitCode(char* output_name);
-void print_instructions(void);
 
-void PRINTER_NUM(void);
-void PRINTER_STR(void);
-void PRINTER_USERFUNC(void);
-void PRINTER_LIB(void);
+
+
+/** stack **/
+#define AVM_STACKSIZE  4096
+#define AVM_WIPEOUT(m) memset(&(m), 0, sizeof(m));
+
+avm_memcell stack[AVM_STACKSIZE];
+
+static void avm_init_stack(void);
+
+
+/** tables **/
+
+
+avm_table* avm_table_new(void);
+void avm_table_destroy(avm_table *t);
+avm_memcell* avm_table_getelem(avm_memcell *key);
+void avm_table_setelem(avm_memcell *key, avm_memcell *value);
+
+
+/** translate **/
+#define AVM_STACKENV_SIZE 4
+
+avm_memcell ax, bx, cx;
+avm_memcell retval;
+unsigned top, topsp;
+
+double consts_getnumber(unsigned index);
+char*  consts_getstring(unsigned index);
+char*  libfuncs_getused(unsigned index);
+
+
 
 #endif

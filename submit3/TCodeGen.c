@@ -1,5 +1,6 @@
-#include "avm.h"
+#include "Tcode.h"
 
+/**************** emit instructions ****************/
 
 #define EXPAND_SIZE 1024
 #define CURR_SIZE   (total_instructions*sizeof(instruction))
@@ -46,87 +47,82 @@ void init_instuction(instruction *t) {
     t->arg2.val = -1;
 }
 
-char* vmopcode_toString[24] = {
-    "assign",       "add",          "sub",
-    "mul",          "div",          "mod", 
-    "jeq",          "jne",          "jle",
-    "jge",          "jlt",          "jgt",
-    "call",         "pusharg",      "funcenter",    
-    "funcexit",     "newtable",     "tablegetelem", 
-    "tablesetelem", "jump",         "nop"
-};
 
-double *numConsts = (double*) 0;
-unsigned totalNumConsts = 0;
+/**************** constant lists ****************/
 
-char **stringConsts = (char**) 0;
-unsigned totalStringConsts = 0;
+double *num_consts = (double*) 0;
+unsigned total_num_consts = 0;
 
-char **namedLibfuncs = (char**) 0;
-unsigned totalNamedLibFuncs = 0;
+char **string_consts = (char**) 0;
+unsigned total_string_consts = 0;
 
-userfunc *userFuncs = (userfunc*) 0;
-unsigned totalUserFuncs = 0;
+char **named_lib_funcs = (char**) 0;
+unsigned total_named_lib_funcs = 0;
 
+userfunc *user_funcs = (userfunc*) 0;
+unsigned total_user_funcs = 0;
 
 unsigned consts_newstring(char *str) {
-    for(unsigned i=0; i<totalStringConsts; ++i) 
-        if(!strcmp(stringConsts[i], str))
+    for(unsigned i=0; i<total_string_consts; ++i) 
+        if(!strcmp(string_consts[i], str))
             return i;
 
-    if (!totalStringConsts)
-        stringConsts = malloc(sizeof(char*));
+    if (!total_string_consts)
+        string_consts = malloc(sizeof(char*));
     else 
-        stringConsts = realloc(stringConsts, sizeof(char*)*(totalStringConsts+1));
+        string_consts = realloc(string_consts, sizeof(char*)*(total_string_consts+1));
 
-    stringConsts[totalStringConsts] = strdup(str);
-    return totalStringConsts++;
+    string_consts[total_string_consts] = strdup(str);
+    return total_string_consts++;
 }   
 
 unsigned consts_newnumber(double num) {
-    for(unsigned i=0; i<totalNumConsts; ++i) 
-        if(numConsts[i] == num)
+    for(unsigned i=0; i<total_num_consts; ++i) 
+        if(num_consts[i] == num)
             return i;
 
-    if (!totalNumConsts)
-        numConsts = malloc(sizeof(double));
+    if (!total_num_consts)
+        num_consts = malloc(sizeof(double));
     else 
-        numConsts = realloc(numConsts, sizeof(double)*(totalNumConsts+1));
+        num_consts = realloc(num_consts, sizeof(double)*(total_num_consts+1));
     
-    numConsts[totalNumConsts] = num; 
-    return totalNumConsts++;
+    num_consts[total_num_consts] = num; 
+    return total_num_consts++;
 }
 
 unsigned userfuncs_newfunc(SymbolTableEntry *sym) {
-    for(unsigned i=0; i<totalUserFuncs; ++i) 
-        if(userFuncs[i].address == sym->value.funcVal->iaddress)
+    for(unsigned i=0; i<total_user_funcs; ++i) 
+        if(user_funcs[i].address == sym->value.funcVal->iaddress)
             return i;
         
-    if (!totalUserFuncs)
-        userFuncs = malloc(sizeof(userfunc));
+    if (!total_user_funcs)
+        user_funcs = malloc(sizeof(userfunc));
     else 
-        userFuncs = realloc(userFuncs, sizeof(userfunc)*(totalUserFuncs+1));
+        user_funcs = realloc(user_funcs, sizeof(userfunc)*(total_user_funcs+1));
     
-    userFuncs[totalUserFuncs].address = sym->value.funcVal->iaddress;
-    userFuncs[totalUserFuncs].localSize = sym->value.funcVal->totalLocals;
-    userFuncs[totalUserFuncs].id = sym->value.funcVal->name;  
+    user_funcs[total_user_funcs].address = sym->value.funcVal->iaddress;
+    user_funcs[total_user_funcs].localSize = sym->value.funcVal->totalLocals;
+    user_funcs[total_user_funcs].id = sym->value.funcVal->name;  
 
-    return totalUserFuncs++;
+    return total_user_funcs++;
 }
 
 unsigned libfuncs_newused(const char *name) {
-    for(unsigned i=0; i<totalNamedLibFuncs; ++i) 
-        if(!strcmp(namedLibfuncs[i], name))
+    for(unsigned i=0; i<total_named_lib_funcs; ++i) 
+        if(!strcmp(named_lib_funcs[i], name))
             return i;
 
-    if (!totalNamedLibFuncs)
-        namedLibfuncs = malloc(sizeof(char*));
+    if (!total_named_lib_funcs)
+        named_lib_funcs = malloc(sizeof(char*));
     else 
-        namedLibfuncs = realloc(namedLibfuncs, sizeof(char*)*(totalNamedLibFuncs+1));
+        named_lib_funcs = realloc(named_lib_funcs, sizeof(char*)*(total_named_lib_funcs+1));
 
-    namedLibfuncs[totalNamedLibFuncs] = strdup(name);
-    return totalNamedLibFuncs++;
+    named_lib_funcs[total_named_lib_funcs] = strdup(name);
+    return total_named_lib_funcs++;
 }
+
+
+/**************** generators ****************/
 
 void make_operand(expr* e, vmarg* arg) {
     if(!e) {
@@ -311,35 +307,35 @@ void generateBitCode(char* output_name) {
     fwrite(&magic_number, sizeof(unsigned), 1, f);
 
     // write string array
-    fwrite(&totalStringConsts, sizeof(unsigned), 1, f);
-    for(int i=0; i<totalStringConsts; ++i) {
-        unsigned size = strlen(stringConsts[i]) + 1;
+    fwrite(&total_string_consts, sizeof(unsigned), 1, f);
+    for(int i=0; i<total_string_consts; ++i) {
+        unsigned size = strlen(string_consts[i]) + 1;
         fwrite(&size, sizeof(unsigned), 1, f);
-        fwrite(stringConsts[i], size, 1, f);    
+        fwrite(string_consts[i], size, 1, f);    
     }
 
     // write numbers array
-    fwrite(&totalNumConsts, sizeof(unsigned), 1, f);
-    for(int i=0; i<totalNumConsts; ++i) {
-        fwrite(&numConsts[i], sizeof(double), 1, f);
+    fwrite(&total_num_consts, sizeof(unsigned), 1, f);
+    for(int i=0; i<total_num_consts; ++i) {
+        fwrite(&num_consts[i], sizeof(double), 1, f);
     }
 
     // write userfunctions array
-    fwrite(&totalUserFuncs, sizeof(unsigned), 1, f);
-    for(int i=0; i<totalUserFuncs; ++i) {
-        unsigned size = strlen(userFuncs[i].id) + 1;
-        fwrite(&userFuncs[i].address, sizeof(unsigned), 1, f);
-        fwrite(&userFuncs[i].localSize, sizeof(unsigned), 1, f);
+    fwrite(&total_user_funcs, sizeof(unsigned), 1, f);
+    for(int i=0; i<total_user_funcs; ++i) {
+        unsigned size = strlen(user_funcs[i].id) + 1;
+        fwrite(&user_funcs[i].address, sizeof(unsigned), 1, f);
+        fwrite(&user_funcs[i].localSize, sizeof(unsigned), 1, f);
         fwrite(&size, sizeof(unsigned), 1, f);
-        fwrite(userFuncs[i].id, size, 1, f);
+        fwrite(user_funcs[i].id, size, 1, f);
     }
 
     // write libfunctions array
-    fwrite(&totalNamedLibFuncs, sizeof(unsigned), 1, f);
-    for(int i=0; i<totalNamedLibFuncs; ++i) {
-        unsigned size = strlen(namedLibfuncs[i]) + 1;
+    fwrite(&total_named_lib_funcs, sizeof(unsigned), 1, f);
+    for(int i=0; i<total_named_lib_funcs; ++i) {
+        unsigned size = strlen(named_lib_funcs[i]) + 1;
         fwrite(&size, sizeof(unsigned), 1, f);
-        fwrite(namedLibfuncs[i], size, 1, f);
+        fwrite(named_lib_funcs[i], size, 1, f);
     }
 
     // write instructions
@@ -353,11 +349,14 @@ void generateBitCode(char* output_name) {
         fwrite(&t.arg1.val, sizeof(unsigned), 1, f);
         fwrite(&t.arg2.type, sizeof(int), 1, f);
         fwrite(&t.arg2.val, sizeof(unsigned), 1, f);
+        fwrite(&t.srcLine, sizeof(unsigned), 1, f);
     }
 
     fclose(f);
     free(out_name);
 }
+
+/**************** printers ****************/
 
 char *iopcodeString[25] = {
     "assign",         "add",            "sub", 
@@ -368,6 +367,16 @@ char *iopcodeString[25] = {
 	"getretval",      "funcstart", 		"funcend",
 	"tablecreate",	  "tablegetelem",   "tablesetelem",
 	"jump", 		  "and",            "or", 			
+};
+
+char* vmopcode_toString[24] = {
+    "assign",       "add",          "sub",
+    "mul",          "div",          "mod", 
+    "jeq",          "jne",          "jle",
+    "jge",          "jlt",          "jgt",
+    "call",         "pusharg",      "funcenter",    
+    "funcexit",     "newtable",     "tablegetelem", 
+    "tablesetelem", "jump",         "nop"
 };
 
 char *type_to_string[] = {
@@ -445,10 +454,10 @@ void PRINTER_NUM(void){
 	int i = 0;
 	printf(a_c_r bold under"PINAKAS ARITHMITIKON STATHERON\n"under_re bold_re a_c_re);
 
-	for(i = 0; i<totalNumConsts; i++){
+	for(i = 0; i<total_num_consts; i++){
 		printf(a_c_b "|" a_c_re);
 		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| %lf\n" a_c_re, numConsts[i]);
+		printf(a_c_b "| %lf\n" a_c_re, num_consts[i]);
 	}
 	printf("\n");
 
@@ -459,10 +468,10 @@ void PRINTER_STR(void){
 	int i = 0;
 	printf(a_c_r bold under"PINAKAS STATHERON STRINGS\n"under_re bold_re a_c_re);
 
-	for(i = 0; i<totalStringConsts; i++){
+	for(i = 0; i<total_string_consts; i++){
 		printf(a_c_b "|" a_c_re);
 		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| %s\n" a_c_re, stringConsts[i]);
+		printf(a_c_b "| %s\n" a_c_re, string_consts[i]);
 	}
 	printf("\n");
 }
@@ -472,10 +481,10 @@ void PRINTER_USERFUNC(void){
 	int i = 0;
 	printf(a_c_r bold under"PINAKAS SUNARTISEON XRISTI\n"under_re bold_re a_c_re);
 
-	for(i = 0; i<totalUserFuncs; i++){
+	for(i = 0; i<total_user_funcs; i++){
 		printf(a_c_b "|" a_c_re);
 		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| address %d, localSize %d, id %s\n" a_c_re,userFuncs[i].address,userFuncs[i].localSize,userFuncs[i].id);
+		printf(a_c_b "| address %d, localSize %d, id %s\n" a_c_re,user_funcs[i].address,user_funcs[i].localSize,user_funcs[i].id);
 	}
 	printf("\n");
 
@@ -486,10 +495,10 @@ void PRINTER_LIB(void){
 	int i = 0;
 	printf(a_c_r bold under"PINAKAS SUNARTISEON VIVLIOTHIKIS\n"under_re bold_re a_c_re);
 
-	for(i = 0; i<totalNamedLibFuncs; i++){
+	for(i = 0; i<total_named_lib_funcs; i++){
 		printf(a_c_b "|" a_c_re);
 		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| %s\n" a_c_re, namedLibfuncs[i]);
+		printf(a_c_b "| %s\n" a_c_re, named_lib_funcs[i]);
 	}
 	printf("\n");
 
