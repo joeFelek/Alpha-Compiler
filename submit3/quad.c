@@ -10,6 +10,7 @@
 quad* quads = (quad*) 0;
 unsigned total = 0;
 unsigned currQuad = 0;
+unsigned total_global_variables = 0;
 
 char *iopcodeStrings[25] = {
     "assign",         "add",            "sub", 
@@ -133,6 +134,7 @@ SymbolTableEntry* newTemp(void) {
     
 	sym = insert(name, 0, TEMP);
 	sym->space = currScopeSpace();
+	if(sym->space == PROGRAMVAR) ++total_global_variables; 
 	sym->offset = currScopeOffset();
 	incCurrScopeOffset();
 	return sym;
@@ -277,7 +279,7 @@ expr* emit_iftableitem(expr* e) {
 	
 	expr* result = newexpr(var_e);
 	result->sym = newTemp();
-	emit(tablegetelem, result, e, e->index, 0, 0);
+	emit(tablegetelem, result, e, e->index, 0, yylineno);
 	return result;	
 }
 
@@ -294,13 +296,13 @@ call_s* new_call(expr* elist, unsigned char method, char* name) {
 expr* make_call(expr* lv, expr* reversed_elist) {
 	expr* func = emit_iftableitem(lv);
 	while(reversed_elist) {
-		emit(param, NULL, reversed_elist, NULL, 0, 0);
+		emit(param, NULL, reversed_elist, NULL, 0, yylineno);
 		reversed_elist = reversed_elist->next;
 	}
-	emit(call, NULL, func, NULL, 0, 0);
+	emit(call, NULL, func, NULL, 0, yylineno);
 	expr* result = newexpr(var_e);
 	result->sym = newTemp();
-	emit(getretval, result, NULL, NULL, 0, 0);
+	emit(getretval, result, NULL, NULL, 0, yylineno);
 	return result;
 }
 

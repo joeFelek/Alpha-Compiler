@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 
+extern int yylineno;
 
 typedef enum iopcode {
     assign,         add,            sub, 
@@ -96,6 +97,7 @@ struct Stack {
 extern quad* quads;
 extern unsigned total;
 extern unsigned currQuad;
+extern unsigned total_global_variables;
 
 void expand(void);
 void emit(iopcode op, expr* result, expr* arg1, expr* arg2, unsigned label, unsigned line);

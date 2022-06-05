@@ -195,7 +195,7 @@ assignexpr  : lvalue '=' expr
 					funcAsLvalue($1);
 					do_backpatching($3);
 					if($1->type == tableitem_e) {
-						emit(tablesetelem, $3, $1, $1->index, 0, yylineno);
+						emit(tablesetelem, $1, $1->index, $3, 0, yylineno);
 						$$ = emit_iftableitem($1);
 						$$->type = assignexpr_e;
 					} else {
@@ -599,14 +599,12 @@ void backpatchIncomplFuncJumps(void) {
 	}
 }
 
-
-
 expr* do_prefixcalculation(expr* e, iopcode op) {
 	expr* result;
 	if(e->type == tableitem_e) {
 		result = emit_iftableitem(e);
 		emit(op, result, result, newexpr_constnum(1), 0, yylineno);
-		emit(tablesetelem, result, e, e->index, 0, yylineno);
+		emit(tablesetelem, e, e->index, result, 0, yylineno);
 	}else {
 		emit(op, e, e, newexpr_constnum(1), 0, yylineno);
 		result = newexpr(arithexpr_e);
@@ -624,7 +622,7 @@ expr* do_postfixcalculation(expr* e, iopcode op) {
 		expr* val = emit_iftableitem(e);
 		emit(assign, result, val, NULL, 0, yylineno);
 		emit(op, val, val, newexpr_constnum(1), 0, yylineno);
-		emit(tablesetelem, val, e, e->index, 0, yylineno);
+		emit(tablesetelem, e, e->index, val, 0, yylineno);
 	}else {
 		emit(assign, result, e, NULL, 0, yylineno);
 		emit(op, e, e, newexpr_constnum(1), 0, yylineno);
@@ -782,6 +780,7 @@ SymbolTableEntry* symtable_ID(char* name) {
 	if(!(e = lookupAll(name, current_scope))) {
 		e = insert(name, yylineno, LOCALVAR);
 		e->space = currScopeSpace();
+		if(e->space == PROGRAMVAR) ++total_global_variables;
 		e->offset = currScopeOffset();
 		incCurrScopeOffset();
 	}else if(e->value.varVal->scope && e->type != USERFUNC && !inFunc(e)) {
@@ -805,6 +804,7 @@ SymbolTableEntry* symtable_LOCAL_ID(char* name) {
 	if(!(e = lookup(name, current_scope))) {
 		e = insert(name, yylineno, LOCALVAR);
 		e->space = currScopeSpace();
+		if(e->space == PROGRAMVAR) ++total_global_variables;
 		e->offset = currScopeOffset();
 		incCurrScopeOffset();
 	} else if(e->type == USERFUNC || e->type == LIBFUNC) {
@@ -918,16 +918,16 @@ int main (int argc, char **argv) {
 	if(warningcounter) {
 		printf("\n\n");
 		if(warningcounter>1)
-			printf(MAGENTA BOLD"Parsing completed with %d warnings..."RESET, warningcounter);
+			printf(MAGENTA BOLD"Compiled with %d warnings..."RESET, warningcounter);
 		else 
-			printf(MAGENTA BOLD"Parsing completed with 1 warning..."RESET);
+			printf(MAGENTA BOLD"Compiled with 1 warning..."RESET);
 	}
 	if(errorcounter) {
 		printf("\n\n");
 		if(errorcounter>1)
-			printf(RED BOLD"Parsing completed with %d errors..."RESET, errorcounter);
+			printf(RED BOLD"Compiled with %d errors..."RESET, errorcounter);
 		else 
-			printf(RED BOLD"Parsing completed with 1 error..."RESET);
+			printf(RED BOLD"Compiled with 1 error..."RESET);
 		printf("\n\n");
 		return 1;
 	}

@@ -29,7 +29,7 @@ void emit_instruction(instruction t) {
     Tcode[curr_instruction].result = t.result;
     Tcode[curr_instruction].arg1 = t.arg1;
     Tcode[curr_instruction].arg2 = t.arg2;
-    Tcode[curr_instruction].srcLine = curr_instruction;
+    Tcode[curr_instruction].srcLine = t.srcLine;
     ++curr_instruction;
 }
 
@@ -45,6 +45,7 @@ void init_instuction(instruction *t) {
     t->arg1.val = -1;
     t->arg2.type = -1;
     t->arg2.val = -1;
+    t->srcLine = 0;
 }
 
 
@@ -160,7 +161,7 @@ void make_operand(expr* e, vmarg* arg) {
             arg->val = consts_newnumber(e->val.numConst);
             break;
         case nil_e:
-            arg->type = number_a;
+            arg->type = nil_a;
             break;
         case programfunc_e:
             arg->type = userfunc_a;
@@ -181,6 +182,7 @@ void generate(vmopcode op, quad q) {
     make_operand(q.arg1, &t.arg1);
     make_operand(q.arg2, &t.arg2);
     make_operand(q.result, &t.result);
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -192,6 +194,7 @@ void generate_relational(vmopcode op, quad q) {
     make_operand(q.arg2, &t.arg2);
     t.result.type = label_a;
     t.result.val = q.label;
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -221,6 +224,7 @@ void generate_PARAM(quad q) {
     init_instuction(&t);
     t.opcode = pusharg_v;
     make_operand(q.arg1, &t.arg1);
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -229,6 +233,7 @@ void generate_CALL(quad q) {
     init_instuction(&t);
     t.opcode = call_v;
     make_operand(q.arg1, &t.arg1);
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -238,6 +243,7 @@ void generate_GETRETVAL(quad q) {
     t.opcode = assign_v;
     make_operand(q.result, &t.result);
     t.arg1.type = retval_a;
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -246,6 +252,7 @@ void generate_FUNCSTART(quad q) {
     init_instuction(&t);
     t.opcode = funcenter_v;
     make_operand(q.result, &t.result);
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -254,6 +261,7 @@ void generate_FUNCEND(quad q) {
     init_instuction(&t);
     t.opcode = funcexit_v;
     make_operand(q.result, &t.result);
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -263,6 +271,7 @@ void generate_RETURN(quad q) {
     t.opcode = assign_v;
     t.result.type = retval_a;
     make_operand(q.result, &t.arg1);
+    t.srcLine = q.line;
     emit_instruction(t);
 }
 
@@ -351,6 +360,8 @@ void generateBitCode(char* output_name) {
         fwrite(&t.arg2.val, sizeof(unsigned), 1, f);
         fwrite(&t.srcLine, sizeof(unsigned), 1, f);
     }
+    
+    fwrite(&total_global_variables, sizeof(unsigned), 1, f);
 
     fclose(f);
     free(out_name);
@@ -402,7 +413,7 @@ void print_instructions(void) {
 
     for(int i=0; i<curr_instruction; i++) {
         instruction c = Tcode[i];
-        printf("%-7d %-15s", c.srcLine, vmopcode_toString[c.opcode]);
+        printf("%-7d %-15s", i, vmopcode_toString[c.opcode]);
 
             if(c.result.type != -1) {
                 if(c.result.val != -1)

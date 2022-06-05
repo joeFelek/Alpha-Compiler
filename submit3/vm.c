@@ -1,21 +1,6 @@
-
+#include "avm.h"
 
 unsigned magic_number = 0;
-
-double *num_consts = (double*) 0;
-unsigned total_num_consts = 0;
-
-char **string_consts = (char**) 0;
-unsigned total_string_consts = 0;
-
-char **named_lib_funcs = (char**) 0;
-unsigned total_named_lib_funcs = 0;
-
-userfunc *user_funcs = (userfunc*) 0;
-unsigned total_user_funcs = 0;
-
-instruction *code = (instruction*) 0;
-unsigned total_instructions = 0;
 
 int read_binary(char* file_name) {
     FILE *f;
@@ -50,7 +35,7 @@ int read_binary(char* file_name) {
     user_funcs = (userfunc*) malloc(sizeof(userfunc)*total_user_funcs);
     for(int i=0; i<total_user_funcs; ++i) {
         fread(&user_funcs[i].address, sizeof(unsigned), 1, f);
-        fread(&user_funcs[i].address, sizeof(unsigned), 1, f);
+        fread(&user_funcs[i].localSize, sizeof(unsigned), 1, f);
         fread(&size, sizeof(unsigned), 1, f);
         user_funcs[i].id = (char*) malloc(sizeof(char)*size);
         fread((char*)user_funcs[i].id, size, 1, f);
@@ -66,9 +51,9 @@ int read_binary(char* file_name) {
     }
 
     // read instructions
-    fread(&total_instructions, sizeof(unsigned), 1, f);
-    code = (instruction*) malloc(sizeof(instruction)*total_instructions);
-    for(int i=0; i<total_instructions; ++i) {
+    fread(&code_size, sizeof(unsigned), 1, f);
+    code = (instruction*) malloc(sizeof(instruction)*code_size);
+    for(int i=0; i<code_size; ++i) {
         fread(&code[i].opcode, sizeof(int), 1, f);
         fread(&code[i].result.type, sizeof(int), 1, f);
         fread(&code[i].result.val, sizeof(unsigned), 1, f);
@@ -78,6 +63,8 @@ int read_binary(char* file_name) {
         fread(&code[i].arg2.val, sizeof(unsigned), 1, f);
         fread(&code[i].srcLine, sizeof(unsigned), 1, f);
     }
+    
+    fread(&total_global_variables, sizeof(unsigned), 1, f);
 
     fclose(f);
     return 0;
@@ -97,6 +84,17 @@ void freeAll(void) {
     free(code);
 }
 
+avm_memcell stack[AVM_STACKSIZE];
+
+static void avm_init_stack(void) {
+    for(int i=0; i<AVM_STACKSIZE-1; ++i) {
+        AVM_WIPEOUT(stack[i]);
+        stack[i].type = undef_m;
+    }
+    top = AVM_STACKSIZE - 1 - total_global_variables;
+    topsp = top;
+}
+
 int main(int argc, char **argv) {
 
     int error_flag = 0;
@@ -108,6 +106,9 @@ int main(int argc, char **argv) {
     }
     
     if(error_flag) return -1;
+
+    avm_init_stack();
+    for(;execute_cycle(););
     
     return 0;
 }

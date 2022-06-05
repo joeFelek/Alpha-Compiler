@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <math.h>
 #include "Tcode.h"
 
 typedef struct avm_memcell avm_memcell;
@@ -42,20 +45,36 @@ typedef struct avm_table_bucket {
 
 struct avm_table {
     unsigned refCounter;
-    avm_table_bucket* strIndexed[AVM_TABLE_HASHSIZE];
-    avm_table_bucket* numIndexed[AVM_TABLE_HASHSIZE];
-    // add other table types
     unsigned total;
+    avm_table_bucket** strIndexed;
+    avm_table_bucket** numIndexed;
+    // add other table types
 };
 
+extern double *num_consts;
+extern unsigned total_num_consts;
 
+extern char **string_consts;
+extern unsigned total_string_consts;
+
+extern char **named_lib_funcs;
+extern unsigned total_named_lib_funcs;
+
+extern userfunc *user_funcs;
+extern unsigned total_user_funcs;
+
+extern instruction *code;
+extern unsigned code_size;
+
+extern unsigned total_global_variables;
 
 
 /** stack **/
 #define AVM_STACKSIZE  4096
 #define AVM_WIPEOUT(m) memset(&(m), 0, sizeof(m));
 
-avm_memcell stack[AVM_STACKSIZE];
+extern avm_memcell stack[AVM_STACKSIZE];
+extern unsigned top, topsp; 
 
 static void avm_init_stack(void);
 
@@ -72,9 +91,8 @@ void avm_table_setelem(avm_memcell *key, avm_memcell *value);
 /** translate **/
 #define AVM_STACKENV_SIZE 4
 
-avm_memcell ax, bx, cx;
-avm_memcell retval;
-unsigned top, topsp;
+int execute_cycle(void);
+static void avm_init_stack(void);
 
 double consts_getnumber(unsigned index);
 char*  consts_getstring(unsigned index);
