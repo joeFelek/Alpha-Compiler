@@ -1,6 +1,39 @@
 #include "avm.h"
 
-unsigned magic_number = 0;
+#define magic 340200501
+
+extern int execute_cycle(void);
+
+/********** global vars **************/
+
+/** final code lists **/
+double *num_consts = (double*) 0;
+unsigned total_num_consts = 0;
+char **string_consts = (char**) 0;
+unsigned total_string_consts = 0;
+char **named_lib_funcs = (char**) 0;
+unsigned total_named_lib_funcs = 0;
+userfunc *user_funcs = (userfunc*) 0;
+unsigned total_user_funcs = 0;
+instruction* code = (instruction*) 0;
+unsigned code_size = 0;
+unsigned total_global_variables = 0;
+
+/** execution cycle and stack **/
+avm_memcell stack[AVM_STACKSIZE];
+avm_memcell ax, bx, cx;
+avm_memcell retval;
+unsigned top = 0;
+unsigned topsp = 0;
+unsigned pc = 0;
+unsigned curr_line = 0;
+unsigned char execution_finished = 0;
+
+/** call **/
+int totalActuals = 0;
+
+/*************************************/
+
 
 int read_binary(char* file_name) {
     FILE *f;
@@ -9,11 +42,16 @@ int read_binary(char* file_name) {
     
     f = fopen(file_name, "rb");
     if(!f) {
-        fprintf(stderr, "error: file %s not found\n", file_name);
+        avm_error("'%s' not found", file_name);
         return 1;
     }
 
+    unsigned magic_number = 0;
     fread(&magic_number, sizeof(unsigned), 1, f);
+    if(magic_number != magic) {
+        avm_error("'%s' is not an alpha binary file", file_name);
+        return 1;
+    }
 
     // read string consts
     fread(&total_string_consts, sizeof(unsigned), 1, f);
@@ -82,12 +120,14 @@ void freeAll(void) {
         free((char*)user_funcs[i].id);
     free(user_funcs);
     free(code);
+
+    for(int i=0; i<AVM_STACKSIZE; ++i) {
+        avm_memcell_clear(&stack[i]);
+    }
 }
 
-avm_memcell stack[AVM_STACKSIZE];
-
 static void avm_init_stack(void) {
-    for(int i=0; i<AVM_STACKSIZE-1; ++i) {
+    for(int i=0; i<AVM_STACKSIZE; ++i) {
         AVM_WIPEOUT(stack[i]);
         stack[i].type = undef_m;
     }
@@ -112,3 +152,76 @@ int main(int argc, char **argv) {
     
     return 0;
 }
+
+void avm_error(char* format, ...) {
+    va_list ap;
+    unsigned size = strlen(format);
+    unsigned num;
+    double dnum;
+    const char *s;
+
+    fprintf(stderr, "\n"BOLD"%d"RESET": "BOLD RED"error"RESET":  ", curr_line);
+    
+    va_start(ap, format);
+    for(int i=0; i<size; i++) {
+        if(format[i] == '%') {
+            switch(format[++i]) {
+                case 'd':
+                    num = va_arg(ap, unsigned);
+                    fprintf(stderr, "%d", num);
+                    break;
+                case 's':
+                    s = va_arg(ap, const char*);
+                    fprintf(stderr, "%s", s);
+                    break;
+                case 'l':
+                    dnum = va_arg(ap, double);
+                    fprintf(stderr, "%lf", dnum);
+                    ++i;
+                    break;
+            }
+        }else {
+            fprintf(stderr, "%c", format[i]);
+        }
+    }
+    fprintf(stderr, "\n\n");
+    va_end(ap);
+
+    execution_finished = 1;
+}
+
+void avm_warning(char* format, ...) {
+    va_list ap;
+    unsigned size = strlen(format);
+    unsigned num;
+    double dnum;
+    const char *s;
+
+    fprintf(stderr, "\n"BOLD"%d"RESET": "BOLD MAGENTA"warning"RESET":  ", curr_line);
+
+    va_start(ap, format);
+    for(int i=0; i<size; i++) {
+        if(format[i] == '%') {
+            switch(format[++i]) {
+                case 'd':
+                    num = va_arg(ap, unsigned);
+                    fprintf(stderr, "%d", num);
+                    break;
+                case 's':
+                    s = va_arg(ap, const char*);
+                    fprintf(stderr, "%s", s);
+                    break;
+                case 'l':
+                    dnum = va_arg(ap, double);
+                    fprintf(stderr, "%lf", dnum);
+                    ++i;
+                    break;
+            }
+        }else {
+            fprintf(stderr, "%c", format[i]);
+        }
+    }
+    fprintf(stderr, "\n\n");
+    va_end(ap);
+}
+

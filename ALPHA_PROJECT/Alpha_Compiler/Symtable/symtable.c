@@ -1,8 +1,10 @@
 #include "symtable.h"
 
-struct SymTable_S *symTable;
-struct ScopeList *scopeList;
-struct ScopeList  *funcScopeList;
+
+
+struct SymTable_S *symTable;	
+struct ScopeList *scopeList;	
+struct ScopeList  *funcScopeList; 
 
 unsigned int current_scope = 0;
 unsigned int func_scope = 0;
@@ -15,6 +17,7 @@ char *libFuncNames[LIBFUNCNUM] = {
 
 char* anonymousFuncBuf = NULL;
 unsigned int anonymousFuncIter = 1;
+
 
 ScopeList* newScopeList(void) {
 	anonymousFuncBuf = NULL;
@@ -45,7 +48,7 @@ Scope* getScope(ScopeList* scopeList, unsigned int scope) {
 	return NULL;
 }
 
-int ScopeList_put(ScopeList *scopeList, SymbolTableEntry *e, int scope, int inFunc) {
+void ScopeList_put(ScopeList *scopeList, SymbolTableEntry *e, int scope, int inFunc) {
 	Scope *s = getScope(scopeList, scope);
 	if(!s) {
 		s = addScope(scopeList, scope);
@@ -55,7 +58,6 @@ int ScopeList_put(ScopeList *scopeList, SymbolTableEntry *e, int scope, int inFu
 	else
 		e->next_inScope = s->head;
 	s->head = e;
-	return 1;
 }
 
 char* symbolTypeToString(int type) {
@@ -105,6 +107,14 @@ void printScopeList(ScopeList* scopeList) {
 	printf("\n\n");  
 }
 
+void initSymTable(void) {
+	symTable = SymTable_new();
+	scopeList = newScopeList();
+	funcScopeList = newScopeList();
+	insertLibFuncs();
+	anonymousFuncBuf = malloc(sizeof(char));
+}
+
 unsigned int SymTable_hash(const char *pcKey) {
 	size_t ui;
   	unsigned int uiHash = 0U;
@@ -131,7 +141,7 @@ SymTable_S* SymTable_new(void) {
 	return newsymt;
 }
 
-int SymTable_put(SymTable_S *oSymTable, SymbolTableEntry *e) {
+void SymTable_put(SymTable_S *oSymTable, SymbolTableEntry *e) {
 													   							
 	SymbolTableEntry *newitem, *head;
 	unsigned int hash;
@@ -144,8 +154,6 @@ int SymTable_put(SymTable_S *oSymTable, SymbolTableEntry *e) {
 	head = newitem;
 	oSymTable->hash_t[hash] = head;
 	oSymTable->len++;
-	return 1;
-
 }
 
 SymbolTableEntry* newSymEntry(char* name, int line, int type, int scope, int fscope) {
@@ -281,6 +289,87 @@ int equalSymEntries(SymbolTableEntry *a, SymbolTableEntry *b) {
 	if(a->value.varVal->line != b->value.varVal->line) return 0;
 	if(a->value.varVal->scope != b->value.varVal->scope) return 0;
 	return 1;
+}
+
+SymbolTableEntry* symtable_ID(char* name) {
+	SymbolTableEntry *e;
+	
+	if(!(e = lookupAll(name, current_scope))) {
+		e = insert(name, yylineno, LOCALVAR);
+		e->space = currScopeSpace();
+		if(e->space == PROGRAMVAR) ++total_global_variables;
+		e->offset = currScopeOffset();
+		incCurrScopeOffset();
+	}else if(e->value.varVal->scope && e->type != USERFUNC && !inFunc(e)) {
+		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
+		sprintf(line, "%d", e->value.varVal->line);
+		yyerror("syntax error, cannot access ", symbolTypeToString(e->type)," ", CYN, e->value.varVal->name, RESET ," declared at line ", line);
+		free(line);
+		return NULL;
+	}
+	return e;
+}
+
+SymbolTableEntry* symtable_LOCAL_ID(char* name) {
+	SymbolTableEntry *e;
+	
+	if(current_scope != 0 && libraryCollision(name)) {
+		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
+		return NULL;
+	}
+
+	if(!(e = lookup(name, current_scope))) {
+		e = insert(name, yylineno, LOCALVAR);
+		e->space = currScopeSpace();
+		if(e->space == PROGRAMVAR) ++total_global_variables;
+		e->offset = currScopeOffset();
+		incCurrScopeOffset();
+	} else if(e->type == USERFUNC || e->type == LIBFUNC) {
+		yywarning("keyword local useless on functions");
+	}
+	
+	return e;
+}
+
+SymbolTableEntry* symtable_GLOBAL_ID(char* name) {
+	SymbolTableEntry *e;
+	if(!(e = lookup(name, 0))) {
+		yyerror("syntax error, global variable ", CYN, name, RESET, " undeclared (first use here)");
+		return NULL;
+	}
+	return e;
+}
+
+SymbolTableEntry* symtable_FUNC(char* name) {
+	SymbolTableEntry *e;
+	if(libraryCollision(name)) {
+		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
+		return newSymEntry(name, yylineno, USERFUNC, current_scope, func_scope);
+	}
+	if(e = lookup(name, current_scope)) {
+		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
+		sprintf(line, "%d", e->value.varVal->line);
+		yyerror("syntax error, redeclared ", CYN, name, RESET, ", first declared as ", symbolTypeToString(e->type), " at line ", line);
+		free(line);
+		return newSymEntry(name, yylineno, USERFUNC, current_scope, func_scope);
+	}
+	return insert(name, yylineno, USERFUNC);
+}
+
+SymbolTableEntry* symtable_IDLIST(char* name) {
+	if(libraryCollision(name)) {
+		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
+		return NULL;
+	}
+	if(lookup(name, current_scope)) {
+		yyerror("syntax error, formal argument ", CYN, name, RESET, " redeclared");
+		return NULL;
+	}
+	SymbolTableEntry *e = insert(name, yylineno, FORMALVAR);
+	e->space = currScopeSpace();
+	e->offset = currScopeOffset();
+	incCurrScopeOffset();
+	return e;
 }
 
 

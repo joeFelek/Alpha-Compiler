@@ -1,15 +1,13 @@
 #ifndef quad_h_
 #define	quad_h_
 
-#include "symtable.h"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
 
-extern int yylineno;
+#include "../Symtable/symtable.h"
 
 typedef enum iopcode {
     assign,         add,            sub, 
@@ -93,19 +91,30 @@ struct Stack {
     unsigned *stack;
 };
 
+extern int yylineno;        /* parser current source line */
+#define yyerror(...) custom_yyerror(__VA_ARGS__, NULL)
+
+
 /** emit **/
 extern quad* quads;
 extern unsigned total;
 extern unsigned currQuad;
-extern unsigned total_global_variables;
 
 void expand(void);
 void emit(iopcode op, expr* result, expr* arg1, expr* arg2, unsigned label, unsigned line);
 unsigned nextQuadLabel(void);
 void patchLabel(unsigned quadNo, unsigned label);
-
 void printExpr(expr* e);
 void printQuads(void);
+
+
+/** do operations **/
+int check_arith (expr* e, const char* context);
+expr* do_prefixcalculation(expr* e, iopcode op);
+expr* do_postfixcalculation(expr* e, iopcode op);
+expr* do_arithop(iopcode op, expr* e1, expr* e2, char* context);
+expr* do_relop(iopcode op, expr* e1, expr* e2, char* context);
+expr* do_boolop(iopcode op, expr* e1, expr* e2, unsigned label);
 
 
 /** temp variables **/
@@ -119,13 +128,14 @@ unsigned istempname (const char* s);
 unsigned istempexpr (expr* e);
 void freetempname(void);
 
+
 /** scope space and offset **/
 extern unsigned programVarOffset;
 extern unsigned functionLocalOffset;
 extern unsigned formalArgOffset;
 extern unsigned scopeSpaceCounter;
 
-scopespace_t currScopeSpace(void);
+unsigned currScopeSpace(void);
 unsigned currScopeOffset(void);
 void incCurrScopeOffset(void);
 void enterScopeSpace(void);
@@ -165,6 +175,18 @@ unsigned popLoopCounter(void);
 shortcircuit_t* makeSceEntry(unsigned label);
 shortcircuit_t* mergeSceEntries(shortcircuit_t* e1, shortcircuit_t* e2);
 void backpatch(shortcircuit_t* list, unsigned label);
+void emit_ifnotboolexpr(expr* e);
+void do_backpatching(expr* e);
+
+
+/** patch return and function jumps **/
+extern incomplFuncJumps_t* incomplFuncJumpsTop;
+extern incomplFuncJumps_t* incomplFuncJumpsHead;
+extern incomplFuncJumps_t* incomplFuncJumpsTail;
+void pushFuncJump(unsigned label);
+void pushRetJump(unsigned label);
+void patchReturnJump(void);
+void backpatchIncomplFuncJumps(void);
 
 
 /** helper **/

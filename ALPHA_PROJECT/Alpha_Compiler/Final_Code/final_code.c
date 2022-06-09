@@ -1,4 +1,4 @@
-#include "Tcode.h"
+#include "final_code.h"
 
 /**************** emit instructions ****************/
 
@@ -9,6 +9,7 @@
 instruction* Tcode = (instruction*) 0;
 unsigned total_instructions = 0;
 unsigned curr_instruction = 0;
+unsigned total_global_variables = 0;
 
 void expand_instructions(void) {
     instruction* t = (instruction*) malloc(NEW_SIZE);
@@ -309,7 +310,7 @@ void generateTCode(void) {
 
 void generateBitCode(char* output_name) {
     char* out_name = malloc(strlen(output_name)+4);
-    sprintf(out_name, "%s.abc", output_name);
+    sprintf(out_name, "%s", output_name);
     FILE *f = fopen(out_name, "wb");
 
     unsigned magic_number = 340200501;
@@ -446,71 +447,43 @@ void print_instructions(void) {
     }
 }
 
-#define a_c_r     "\x1b[31m"
-#define a_c_g     "\x1b[32m"
-#define a_c_y     "\x1b[33m"
-#define a_c_b     "\x1b[34m"
-#define a_c_m     "\x1b[35m"
-#define a_c_c     "\x1b[36m"
-#define a_c_re    "\x1b[0m"
-#define under     "\e[4m"
-#define under_re  "\e[0m"
-#define italic    "\e[3m"
-#define italic_re "\e[0m"
-#define bold      "\e[1m"
-#define bold_re   "\e[0m"
+void print_num_consts(void){
 
-void PRINTER_NUM(void){
+	printf("\n Number Constants List \n");
+    printf("-------------------------\n");
 
-	int i = 0;
-	printf(a_c_r bold under"PINAKAS ARITHMITIKON STATHERON\n"under_re bold_re a_c_re);
-
-	for(i = 0; i<total_num_consts; i++){
-		printf(a_c_b "|" a_c_re);
-		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| %lf\n" a_c_re, num_consts[i]);
-	}
+	for(int i = 0; i<total_num_consts; ++i)
+		printf("%-2d:  %.03lf\n", i, num_consts[i]);
 	printf("\n");
-
 } 
 
-void PRINTER_STR(void){
+void print_string_consts(void){
 
-	int i = 0;
-	printf(a_c_r bold under"PINAKAS STATHERON STRINGS\n"under_re bold_re a_c_re);
+	printf("\n String Constants List \n");
+    printf("-------------------------\n");
 
-	for(i = 0; i<total_string_consts; i++){
-		printf(a_c_b "|" a_c_re);
-		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| %s\n" a_c_re, string_consts[i]);
-	}
+	for(int i = 0; i<total_string_consts; ++i)
+		printf("%-2d:  %s\n", i, string_consts[i]);
+    printf("\n");
+}
+
+void print_user_funcs(void){
+
+	
+	printf("\n User Functions List \n");
+    printf("-----------------------\n");
+
+	for(int i = 0; i<total_user_funcs; ++i)
+		printf("%-2d:  address %d, localSize %d, id %s\n", i, user_funcs[i].address,user_funcs[i].localSize,user_funcs[i].id);
 	printf("\n");
 }
 
-void PRINTER_USERFUNC(void){
+void print_named_lib_funcs(void){
 
-	int i = 0;
-	printf(a_c_r bold under"PINAKAS SUNARTISEON XRISTI\n"under_re bold_re a_c_re);
+	printf("\n Named Library Functions List \n");
+    printf("----------------------------------\n");
 
-	for(i = 0; i<total_user_funcs; i++){
-		printf(a_c_b "|" a_c_re);
-		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| address %d, localSize %d, id %s\n" a_c_re,user_funcs[i].address,user_funcs[i].localSize,user_funcs[i].id);
-	}
+	for(int i = 0; i<total_named_lib_funcs; ++i)
+		printf("%-2d:  %s\n", i, named_lib_funcs[i]);
 	printf("\n");
-
-}
-
-void PRINTER_LIB(void){
-
-	int i = 0;
-	printf(a_c_r bold under"PINAKAS SUNARTISEON VIVLIOTHIKIS\n"under_re bold_re a_c_re);
-
-	for(i = 0; i<total_named_lib_funcs; i++){
-		printf(a_c_b "|" a_c_re);
-		printf(a_c_b italic "%d" italic_re a_c_re, i);
-		printf(a_c_b "| %s\n" a_c_re, named_lib_funcs[i]);
-	}
-	printf("\n");
-
 }

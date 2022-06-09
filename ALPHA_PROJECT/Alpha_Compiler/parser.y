@@ -2,9 +2,9 @@
 
 %{
 
-#include "symtable.h"
-#include "quad.h"
-#include "Tcode.h"
+#include "Alpha_Compiler/Symtable/symtable.h"
+#include "Alpha_Compiler/Quads/quad.h"
+#include "Alpha_Compiler/Final_Code/final_code.h"
 
 #define yyerror(...) custom_yyerror(__VA_ARGS__, NULL)
 #define yywarning(...) custom_warning(__VA_ARGS__, NULL)
@@ -22,28 +22,6 @@ extern struct ScopeList  *funcScopeList;
 unsigned loopcounter = 0;
 unsigned errorcounter = 0;
 unsigned warningcounter = 0;
-
-incomplFuncJumps_t* incomplFuncJumpsTop = (incomplFuncJumps_t*) 0;
-incomplFuncJumps_t* incomplFuncJumpsHead = (incomplFuncJumps_t*) 0;
-incomplFuncJumps_t* incomplFuncJumpsTail = (incomplFuncJumps_t*) 0;
-
-void pushFuncJump(unsigned label);
-void pushRetJump(unsigned label);
-void patchReturnJump(void);
-void emit_ifnotboolexpr(expr* e);
-void do_backpatching(expr* e);
-int funcAsLvalue(expr *e);
-int check_arith (expr* e, const char* context);
-expr* do_postfixcalculation(expr* e, iopcode op);
-expr* do_prefixcalculation(expr* e, iopcode op);
-expr* do_arithop(iopcode op, expr* e1, expr* e2, char* context);
-expr* do_relop(iopcode op, expr* e1, expr* e2, char* context);
-expr* do_boolop(iopcode op, expr* e1, expr* e2, unsigned label);
-SymbolTableEntry* symtable_ID(char* name); 
-SymbolTableEntry* symtable_LOCAL_ID(char* name);
-SymbolTableEntry* symtable_GLOBAL_ID(char* name);
-SymbolTableEntry* symtable_FUNC(char* name);
-SymbolTableEntry* symtable_IDLIST(char* name);
 
 %}
 
@@ -126,15 +104,15 @@ stmts :	stmt
 			}
 	  ;	
 
-stmt : expr ';'  		{do_backpatching($1); resetTemp(); $$ = make_stmt();}
-	 | ifstmt	 		{resetTemp(); $$ = $1;}
-	 | whilestmt 		{resetTemp(); $$ = make_stmt();}
-	 | forstmt 			{resetTemp(); $$ = make_stmt();}
-	 | returnstmt 		{resetTemp(); $$ = make_stmt();}
+stmt : expr ';'  		{do_backpatching($1); $$ = make_stmt();}
+	 | ifstmt	 		{$$ = $1;}
+	 | whilestmt 		{$$ = make_stmt();}
+	 | forstmt 			{$$ = make_stmt();}
+	 | returnstmt 		{$$ = make_stmt();}
 	 | break 			{$$ = $1;}
 	 | continue 	 	{$$ = $1;}
-	 | block 			{resetTemp(); $$ = $1;}
-	 | funcdef 			{resetTemp(); $$ = make_stmt();}
+	 | block 			{$$ = $1;}
+	 | funcdef 			{$$ = make_stmt();}
 	 | ';' 				{resetTemp(); $$ = make_stmt();}
 	 | error			{yyclearin; resetTemp(); $$ = make_stmt();}
 	 ;
@@ -192,7 +170,8 @@ term 	: '(' expr ')'	  {$$ = $2;}
 
 assignexpr  : lvalue '=' expr 	
 				{
-					funcAsLvalue($1);
+					if($1 && ($1->type == programfunc_e || $1->type == libraryfunc_e)) 
+						yyerror("syntax error, can't change value of function ", CYN, $1->sym->value.funcVal->name, RESET, ", functions are constant");
 					do_backpatching($3);
 					if($1->type == tableitem_e) {
 						emit(tablesetelem, $1, $1->index, $3, 0, yylineno);
@@ -535,334 +514,6 @@ continue : CONTINUE ';'
 
 %%          
 
-void pushFuncJump(unsigned label) {
-	incomplFuncJumps_t* newj = malloc(sizeof(incomplFuncJumps_t));
-	newj->retNum = 0;
-	newj->retLabels = (unsigned*) 0;
-	newj->start = label;
-	newj->end = 0;
-	newj->next = incomplFuncJumpsTop;
-	incomplFuncJumpsTop = newj;
-	if(!incomplFuncJumpsHead) {
-		incomplFuncJumpsHead = newj;
-		incomplFuncJumpsTail = newj;
-		newj->prev = NULL;
-	}else {
-		incomplFuncJumpsTail->prev = newj;
-		incomplFuncJumpsTail = newj;
-	}
-}
-
-void pushRetJump(unsigned label) {
-	if(!incomplFuncJumpsTop->retNum) 
-		incomplFuncJumpsTop->retLabels = malloc(sizeof(unsigned));
-	else 
-		incomplFuncJumpsTop->retLabels = realloc(incomplFuncJumpsTop->retLabels, sizeof(unsigned)*(incomplFuncJumpsTop->retNum+1));
-	
-	incomplFuncJumpsTop->retLabels[incomplFuncJumpsTop->retNum++] = label;
-}
-
-void patchReturnJump(void) {
-	for(int i=0; i<incomplFuncJumpsTop->retNum; i++) {
-		patchLabel(incomplFuncJumpsTop->retLabels[i], incomplFuncJumpsTop->end);
-	}
-}
-
-unsigned patchFuncJump(incomplFuncJumps_t *index) {
-	int start = index->start;
-	int end = index->end;
-
-	if(end+1 == nextQuadLabel()) {
-		patchLabel(start-1, end+1);
-		return end+1;
-	}
-
-	if(quads[end+1].op != jump || quads[end+1].label != 0) {
-		patchLabel(start-1, end+1);
-		return end+1;
-	}
-	
-	while(index && index->start < end) 
-		index = index->prev;
-	int patch = patchFuncJump(index);
-	patchLabel(start-1, patch);	
-	return patch;
-}
-
-void backpatchIncomplFuncJumps(void) {
-	incomplFuncJumps_t* index = incomplFuncJumpsHead;
-
-	while(index) {
-		if(!quads[index->start-1].label) 
-			patchFuncJump(index);
-		index = index->prev;
-	}
-}
-
-expr* do_prefixcalculation(expr* e, iopcode op) {
-	expr* result;
-	if(e->type == tableitem_e) {
-		result = emit_iftableitem(e);
-		emit(op, result, result, newexpr_constnum(1), 0, yylineno);
-		emit(tablesetelem, e, e->index, result, 0, yylineno);
-	}else {
-		emit(op, e, e, newexpr_constnum(1), 0, yylineno);
-		result = newexpr(arithexpr_e);
-		result->sym = newTemp();
-		emit(assign, result, e, NULL, 0, yylineno);
-	}
-	return result;
-}
-
-expr* do_postfixcalculation(expr* e, iopcode op) {
-	expr* result = newexpr(var_e);
-	result->sym = newTemp();
-
-	if(e->type == tableitem_e) {
-		expr* val = emit_iftableitem(e);
-		emit(assign, result, val, NULL, 0, yylineno);
-		emit(op, val, val, newexpr_constnum(1), 0, yylineno);
-		emit(tablesetelem, e, e->index, val, 0, yylineno);
-	}else {
-		emit(assign, result, e, NULL, 0, yylineno);
-		emit(op, e, e, newexpr_constnum(1), 0, yylineno);
-	}
-	return result;
-}
-
-void emit_ifnotboolexpr(expr* e) {
-	
-	if(e->type != boolexpr_e) {
-		e->truelist = makeSceEntry(nextQuadLabel());
-		e->falselist = makeSceEntry(nextQuadLabel()+1);
-		emit(if_eq, NULL, e, newexpr_constbool(1), 0, yylineno);
-		emit(jump, NULL, NULL, NULL, 0, yylineno);
-	}
-}
-
-void do_backpatching(expr* e) {
-	if(e->type == boolexpr_e) {
-		backpatch(e->truelist, nextQuadLabel());
-		backpatch(e->falselist, nextQuadLabel()+2);
-		emit(assign, e, newexpr_constbool(1), NULL, 0, yylineno);
-		emit(jump, NULL, NULL, NULL, nextQuadLabel()+2, yylineno);
-		emit(assign, e, newexpr_constbool(0), NULL, 0, yylineno);
-	}
-}
-
-int check_arith (expr* e, const char* context) {
-	if ( e->type == constbool_e   ||
-		 e->type == conststring_e ||
-		 e->type == nil_e 		  ||
-		 e->type == newtable_e 	  ||
-		 e->type == programfunc_e ||
-		 e->type == libraryfunc_e ||
-		 e->type == boolexpr_e ) 
-	{
-		char *type;
-		const char *name = "";
-		switch(e->type) {
-			case constbool_e:   
-				type = "constant boolean"; 
-				name = (e->val.boolConst) ? "'true'" : "'false'";	
-				break;
-			case conststring_e: 
-				type = "constant string"; 
-				name = e->val.strConst;
-				break;
-			case programfunc_e: 
-				type = "function"; 
-				name = e->sym->value.funcVal->name;
-				break;
-			case libraryfunc_e: 
-				type = "library function"; 
-				name = e->sym->value.funcVal->name;
-				break;
-			case nil_e: 	 	type = "nil"; break;
-			case newtable_e: 	type = "table"; break;
-			case boolexpr_e:  	type = "boolean expression"; break;
-			default: assert(0);
-		}
-			
-		yyerror("Invalid use of ", context, " on ", type, " ", CYN, name,RESET);
-		return 1;
-	}
-	return 0;
-}
-
-expr* do_arithop(iopcode op, expr* e1, expr* e2, char* context) {
-	expr* result;
-	check_arith(e1, context); 
-	check_arith(e2, context);
-	if(e1->type == constnum_e && e2->type == constnum_e) {
-		switch(op) {
-			case add: 		result = newexpr_constnum(e1->val.numConst + e2->val.numConst); break;
-			case sub: 		result = newexpr_constnum(e1->val.numConst - e2->val.numConst); break;
-			case mul: 		result = newexpr_constnum(e1->val.numConst * e2->val.numConst); break;
-			case division: 	result = newexpr_constnum(e1->val.numConst / e2->val.numConst); break;
-			case mod: 		result = newexpr_constnum((int)e1->val.numConst % (int)e2->val.numConst); break;
-			default: assert(0);
-		}
-	}else {
-		result = newexpr(arithexpr_e);
-		if(istempexpr(e1))
-			result->sym = e1->sym;
-		else if(istempexpr(e2))
-			result->sym = e2->sym;
-		else
-			result->sym = newTemp();
-		emit(op, result, e1, e2, 0, yylineno);
-	}
-	return result;
-}
-
-expr* do_relop(iopcode op, expr* e1, expr* e2, char* context) {
-	expr* result = newexpr(boolexpr_e);
-	if(op != if_eq && op != if_noteq) {
-		check_arith(e1, context);
-		check_arith(e2, context);
-	}
-	if(istempexpr(e1))
-		result->sym = e1->sym;
-	else if(istempexpr(e2))
-		result->sym = e2->sym;
-	else
-		result->sym = newTemp();
-
-	result->truelist = makeSceEntry(nextQuadLabel());
-	result->falselist = makeSceEntry(nextQuadLabel()+1);
-	shortcircuit_t *listtrue = mergeSceEntries(e1->truelist, e2->truelist);
-	shortcircuit_t *listfalse = mergeSceEntries(e1->falselist, e2->falselist);
-	result->truelist = mergeSceEntries(result->truelist, listtrue);
-	result->falselist = mergeSceEntries(result->falselist, listfalse);
-	
-	emit(op, NULL, e1, e2, 0, yylineno);
-	emit(jump, NULL, NULL, NULL, 0, yylineno);
-
-	return result;
-}
-
-expr* do_boolop(iopcode op, expr* e1, expr* e2, unsigned label) {
-	expr* result = newexpr(boolexpr_e);
-	if(istempexpr(e1))
-		result->sym = e1->sym;
-	else if(istempexpr(e2))
-		result->sym = e2->sym;
-	else
-		result->sym = newTemp();
-	
-	emit_ifnotboolexpr(e2);
-
-	if(op == or) {
-		backpatch(e1->falselist, label);
-		result->truelist = mergeSceEntries(e1->truelist, e2->truelist);
-		result->falselist = e2->falselist;
-	}else {
-		backpatch(e1->truelist, label);
-		result->truelist = e2->truelist;
-		result->falselist = mergeSceEntries(e1->falselist, e2->falselist);
-	}
-
-	return result;
-}
-
-int funcAsLvalue(expr *e) {
-	if(e && (e->type == programfunc_e || e->type == libraryfunc_e)) {
-		yyerror("syntax error, can't change value of function ", CYN, e->sym->value.varVal->name, RESET, ", functions are constant");
-		return 1;
-	}
-	return 0;
-}
-
-SymbolTableEntry* symtable_ID(char* name) {
-	SymbolTableEntry *e;
-	
-	if(!(e = lookupAll(name, current_scope))) {
-		e = insert(name, yylineno, LOCALVAR);
-		e->space = currScopeSpace();
-		if(e->space == PROGRAMVAR) ++total_global_variables;
-		e->offset = currScopeOffset();
-		incCurrScopeOffset();
-	}else if(e->value.varVal->scope && e->type != USERFUNC && !inFunc(e)) {
-		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
-		sprintf(line, "%d", e->value.varVal->line);
-		yyerror("syntax error, cannot access ", symbolTypeToString(e->type)," ", CYN, e->value.varVal->name, RESET ," declared at line ", line);
-		free(line);
-		return NULL;
-	}
-	return e;
-}
-
-SymbolTableEntry* symtable_LOCAL_ID(char* name) {
-	SymbolTableEntry *e;
-	
-	if(current_scope != 0 && libraryCollision(name)) {
-		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
-		return NULL;
-	}
-
-	if(!(e = lookup(name, current_scope))) {
-		e = insert(name, yylineno, LOCALVAR);
-		e->space = currScopeSpace();
-		if(e->space == PROGRAMVAR) ++total_global_variables;
-		e->offset = currScopeOffset();
-		incCurrScopeOffset();
-	} else if(e->type == USERFUNC || e->type == LIBFUNC) {
-		yywarning("keyword local useless on functions");
-	}
-	
-	return e;
-}
-
-SymbolTableEntry* symtable_GLOBAL_ID(char* name) {
-	SymbolTableEntry *e;
-	if(!(e = lookup(name, 0))) {
-		yyerror("syntax error, global variable ", CYN, name, RESET, " undeclared (first use here)");
-		return NULL;
-	}
-	return e;
-}
-
-SymbolTableEntry* symtable_FUNC(char* name) {
-	SymbolTableEntry *e;
-	if(libraryCollision(name)) {
-		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
-		return newSymEntry(name, yylineno, USERFUNC, current_scope, func_scope);
-	}
-	if(e = lookup(name, current_scope)) {
-		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
-		sprintf(line, "%d", e->value.varVal->line);
-		yyerror("syntax error, redeclared ", CYN, name, RESET, ", first declared as ", symbolTypeToString(e->type), " at line ", line);
-		free(line);
-		return newSymEntry(name, yylineno, USERFUNC, current_scope, func_scope);
-	}
-	return insert(name, yylineno, USERFUNC);
-}
-
-SymbolTableEntry* symtable_IDLIST(char* name) {
-	if(libraryCollision(name)) {
-		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
-		return NULL;
-	}
-	if(lookup(name, current_scope)) {
-		yyerror("syntax error, formal argument ", CYN, name, RESET, " redeclared");
-		return NULL;
-	}
-	SymbolTableEntry *e = insert(name, yylineno, FORMALVAR);
-	e->space = currScopeSpace();
-	e->offset = currScopeOffset();
-	incCurrScopeOffset();
-	return e;
-}
-
-void initSymTable(void) {
-	symTable = SymTable_new();
-	scopeList = newScopeList();
-	funcScopeList = newScopeList();
-	insertLibFuncs();
-	anonymousFuncBuf = malloc(sizeof(char));
-}
-
 void freeSymbols(void) {
 	for(int i=0; i<scopeList->len; i++) {
 		SymbolTableEntry *e = scopeList->scopes[i].head;
@@ -913,8 +564,6 @@ int main (int argc, char **argv) {
 	initSymTable();
 	yyparse();
 	
-
-
 	if(warningcounter) {
 		printf("\n\n");
 		if(warningcounter>1)
@@ -949,10 +598,10 @@ int main (int argc, char **argv) {
 				output_flag = i;
 			if(!strcmp(argv[i], "-i")) {
 				print_instructions();
-				PRINTER_NUM();
-				PRINTER_STR();
-				PRINTER_USERFUNC();
-				PRINTER_LIB();
+				print_num_consts();
+				print_string_consts();
+				print_user_funcs();
+				print_named_lib_funcs();
 			}
 		}
 	}
@@ -964,10 +613,8 @@ int main (int argc, char **argv) {
 		}
 		generateBitCode(argv[output_flag+1]);
 	}else {
-		generateBitCode("alpha");
+		generateBitCode("alpha.abc");
 	}
-
-
 
 	freeAll();
 	return 0;

@@ -1,14 +1,3 @@
-#ifndef tcode_h_
-#define	tcode_h_
-
-#include "quad.h"
-
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <stdio.h>
-
 typedef enum vmopcode {
     assign_v,       add_v,          sub_v,
     mul_v,          div_v,          mod_v, 
@@ -51,28 +40,3 @@ typedef struct userfunc {
     unsigned    localSize;
     const char* id;
 }userfunc;
-
-
-extern double *num_consts;
-extern unsigned total_num_consts;
-
-extern char **string_consts;
-extern unsigned total_string_consts;
-
-extern char **named_lib_funcs;
-extern unsigned total_named_lib_funcs;
-
-extern userfunc *user_funcs;
-extern unsigned total_user_funcs;
-
-
-void generateTCode(void);
-void generateBitCode(char* output_name);
-void print_instructions(void);
-
-void PRINTER_NUM(void);
-void PRINTER_STR(void);
-void PRINTER_USERFUNC(void);
-void PRINTER_LIB(void);
-
-#endif
