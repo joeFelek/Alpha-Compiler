@@ -514,6 +514,30 @@ continue : CONTINUE ';'
 
 %%          
 
+void freeExpr(expr* e) {
+	for(int i=0; e && i<currQuad; ++i) {
+		if(quads[i].arg1 == e)
+			quads[i].arg1 = NULL;
+		if(quads[i].arg2 == e)
+			quads[i].arg2 = NULL;
+		if(quads[i].result == e)
+			quads[i].result = NULL;
+	}
+	free(e);
+}
+
+void freeQuads(void) {
+	for(int i=0; i<currQuad; ++i) {
+		freeExpr(quads[i].arg1);
+		quads[i].arg1 = NULL;
+		freeExpr(quads[i].arg2);
+		quads[i].arg2 = NULL;
+		freeExpr(quads[i].result);
+		quads[i].result = NULL;
+	}
+	free(quads);
+}
+
 void freeSymbols(void) {
 	for(int i=0; i<scopeList->len; i++) {
 		SymbolTableEntry *e = scopeList->scopes[i].head;
@@ -547,6 +571,7 @@ void freeFuncJumps(void) {
 }
 
 void freeAll(void) {	
+	freeQuads();
 	free(anonymousFuncBuf);
 	freetempname();
 	freeStacks();

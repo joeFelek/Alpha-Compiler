@@ -3,20 +3,30 @@
 ###
 
 
-# Phase 3
+# Phase 4-5
 
 
 ## How to run:
 
     make
-    ./alpha < testfile
+    
+    ./alphac < testfile <options>
+        <options>:
+            -s: print symbol table
+            -q: print quad list
+            -i: print instructions list
+            -o: change the name of the binary file generated (default name is alpha.abc)    
+    
+    ./alpha <binary file> 
+        <binary file>: if specified then execute it 
+                       if not then it executes alpha.abc (default binary file name)
+
 
 ## Comments: 
 
-    Ta ilopoihsa ola.
-        * ola ta quads opws tis dialekseis;
-        * meriki apotimisi;
-        * temporary vars reuse;
-        * const arithmetic caclution;
-        * jumps for functions and returns;
-        * extra error checking;
+    Ilopoihsa:  
+        * ola ta basika;
+        * ola ta library functions;
+        * functor with dispatcher "()";
+
+    den prosthesa epipleon table indexes pera apo ta num kai ta string.
