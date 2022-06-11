@@ -128,6 +128,7 @@ extern void avm_tablesetelem(avm_table* table, avm_memcell* index, avm_memcell* 
 
 /** garbage collection **/
 extern void avm_memcell_clear(avm_memcell *m);
+extern void avm_memcell_free(avm_memcell *m);
 
 
 /** tostring **/

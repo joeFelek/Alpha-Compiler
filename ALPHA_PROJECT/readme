@@ -27,6 +27,7 @@
     Ilopoihsa:  
         * ola ta basika;
         * ola ta library functions;
+        * string concatination with '+' symbol --> "s1" + "s2" == "s1s2";
         * functor with dispatcher "()";
 
     den prosthesa epipleon table indexes pera apo ta num kai ta string.

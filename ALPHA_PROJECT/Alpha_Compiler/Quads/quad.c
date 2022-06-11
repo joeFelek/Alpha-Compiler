@@ -28,6 +28,8 @@ void printExpr(expr* e) {
 		return;
 	}
 	
+	char* s;
+
 	switch(e->type) {
 		case constnum_e:    
 			if(isInteger(e->val.numConst))
@@ -36,7 +38,7 @@ void printExpr(expr* e) {
 				printf(" %-15.2f", e->val.numConst);
 			break;
 		case conststring_e: 
-			char* s = malloc(strlen(e->val.strConst)+3);
+			s = malloc(strlen(e->val.strConst)+3);
 			sprintf(s, "\"%s\"", e->val.strConst);
 			printf(" %-15s", s); 
 			free(s);

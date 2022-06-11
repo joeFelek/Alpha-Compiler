@@ -122,7 +122,7 @@ void freeAll(void) {
     free(code);
 
     for(int i=0; i<AVM_STACKSIZE; ++i) {
-        avm_memcell_clear(&stack[i]);
+        avm_memcell_free(&stack[i]);
     }
 }
 

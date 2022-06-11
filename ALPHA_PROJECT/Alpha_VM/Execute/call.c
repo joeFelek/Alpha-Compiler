@@ -81,6 +81,7 @@ void execute_call(instruction* instr) {
     if(func->type != table_m)
         avm_call_save_environment();
 
+    char *s;
     switch(func->type) {
         case userfunc_m:
             pc = func->data.funcVal;
@@ -97,7 +98,7 @@ void execute_call(instruction* instr) {
             if(dispatch(func)) 
                 break;
         default:
-            char *s = avm_tostring(func);
+            s = avm_tostring(func);
             avm_error("call: cannot bind "CYN"'%s'"RESET" to function!", s);
             free(s);
             execution_finished = 1;

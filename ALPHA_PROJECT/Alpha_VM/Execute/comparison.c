@@ -4,11 +4,20 @@
 unsigned char avm_compare_memcells(avm_memcell* rv1, avm_memcell* rv2) {
     if(rv1->type != rv2->type) 
         return 0;
+    
+    char *sv1, *sv2;
+    unsigned char result;
 
     switch(rv1->type) {
         case number_m: return rv1->data.numVal == rv2->data.numVal;
         case string_m: return !strcmp(rv1->data.strVal, rv2->data.strVal);
-        case table_m: return !strcmp(avm_tostring(rv1), avm_tostring(rv2));
+        case table_m: 
+            sv1 = avm_tostring(rv1);
+            sv2 = avm_tostring(rv2);
+            result = !strcmp(sv1, sv2);
+            free(sv1);
+            free(sv2);
+            return result;
         case userfunc_m: return rv1->data.funcVal == rv2->data.funcVal;
         case libfunc_m: return !strcmp(rv1->data.libfuncVal, rv2->data.libfuncVal);
         default: assert(0);
