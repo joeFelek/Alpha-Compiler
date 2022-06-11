@@ -53,11 +53,11 @@ char* string_tostring(avm_memcell* m) {
 
 char* bool_tostring(avm_memcell* m) {
     assert(m->type == bool_m);
-    char* result = malloc(20);
+    char* result;
     if(m->data.boolVal) 
-        strcpy(result, GREEN"true"RESET);
+        result = strdup(GREEN"true"RESET);
     else 
-        strcpy(result, RED"false"RESET);
+        result = strdup( RED"false"RESET);
     return result;
 }
 
@@ -134,15 +134,13 @@ char* libfunc_tostring(avm_memcell* m) {
 
 char* nil_tostring(avm_memcell* m) {
     assert(m->type == nil_m);
-    char* result = malloc(20);
-    strcpy(result, BBLA"nil"RESET);
+    char* result = strdup(BBLA"nil"RESET);
     return result;
 }
 
 char* undef_tostring(avm_memcell* m) {
     assert(m->type == undef_m);
-    char* result = malloc(20);
-    strcpy(result, BBLA"undefined"RESET);
+    char* result = strdup(BBLA"undefined"RESET);
     return result;
 }
 
