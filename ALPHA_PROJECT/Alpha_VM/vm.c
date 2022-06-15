@@ -122,8 +122,13 @@ void freeAll(void) {
     free(code);
 
     for(int i=0; i<AVM_STACKSIZE; ++i) {
-        avm_memcell_free(&stack[i]);
+        avm_memcell_clear(&stack[i]);
     }
+
+    // avm_memcell_clear(&retval);
+    // avm_memcell_clear(&ax);
+    // avm_memcell_clear(&bx);
+    // avm_memcell_clear(&cx);
 }
 
 static void avm_init_stack(void) {
@@ -150,6 +155,7 @@ int main(int argc, char **argv) {
     avm_init_stack();
     for(;execute_cycle(););
     
+    freeAll();
     return 0;
 }
 

@@ -2,12 +2,10 @@
 
 
 void avm_dec_top(void) {
-    if(!top) {
+    if(!top)
         avm_error(BOLD RED"stack overflow" RESET "");
-        execution_finished = 1;
-    }else {
+    else 
         --top;
-    }
 }
 
 void avm_push_env_value(unsigned val) {
@@ -101,7 +99,6 @@ void execute_call(instruction* instr) {
             s = avm_tostring(func);
             avm_error("call: cannot bind "CYN"'%s'"RESET" to function!", s);
             free(s);
-            execution_finished = 1;
     }
 }
 

@@ -81,10 +81,12 @@ char* table_bucket_tostring(avm_table_bucket *elem, char* result, int numIndexed
             value = tmp;
         }
 
-        result = realloc(result, strlen(result)+strlen(key)+strlen(value)+100);  
-        sprintf(result, "%s"BBLU"{"BWHT"%s "RESET": %s"BBLU"}"RESET", ", result, key, value);
+        tmp = malloc(strlen(result)+strlen(key)+strlen(value)+100);  
+        sprintf(tmp, "%s"BBLU"{"BWHT"%s "RESET": %s"BBLU"}"RESET", ", result, key, value);
         free(value);
         free(key);
+        free(result);
+        result = tmp;
         elem = elem->next; 
     }
 

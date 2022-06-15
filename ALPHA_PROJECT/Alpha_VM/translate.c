@@ -26,7 +26,7 @@ avm_memcell* avm_translate_operand(vmarg *arg, avm_memcell *reg) {
             return reg;
         case string_a:
             reg->type = string_m;
-            reg->data.strVal = strdup(consts_getstring(arg->val));
+            reg->data.strVal = consts_getstring(arg->val);
             return reg;
         case bool_a:
             reg->type = bool_m;

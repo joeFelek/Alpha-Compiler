@@ -104,8 +104,9 @@ avm_memcell* avm_tablegetelem(avm_table* table, avm_memcell* index) {
 
 void avm_tablesetelem(avm_table* table, avm_memcell* index, avm_memcell* content) {
     avm_table_bucket* elem = avm_tablelookup(table, index);
+    if(execution_finished) return;
     unsigned hash = avm_tablehash(index);
-
+    printf("hash: %d\n", hash);
     if(content->type == nil_m) {
         if(elem) {
             avm_memcell_clear(&elem->key);
@@ -127,20 +128,14 @@ void avm_tablesetelem(avm_table* table, avm_memcell* index, avm_memcell* content
         avm_assign(&new_bucket->key, index);
         avm_assign(&new_bucket->value, content);
         
-        switch(index->type) {
-            case number_m:
-                tmp = table->numIndexed[hash];
-                table->numIndexed[hash] = new_bucket;
-                new_bucket->next = tmp;
-                break;
-            case string_m:
-                tmp = table->strIndexed[hash];
-                table->strIndexed[hash] = new_bucket;
-                new_bucket->next = tmp;
-                break;
-            default:
-                avm_error("can't use table index of type '"CYN"%s"RESET"'", memcell_type_tostring
-            [index->type]);
+        if(index->type == number_m) {
+            tmp = table->numIndexed[hash];
+            table->numIndexed[hash] = new_bucket;
+            new_bucket->next = tmp;
+        } else {
+            tmp = table->strIndexed[hash];
+            table->strIndexed[hash] = new_bucket;
+            new_bucket->next = tmp;
         }
 
         table->total++;
