@@ -121,14 +121,15 @@ void freeAll(void) {
     free(user_funcs);
     free(code);
 
+    avm_memcell_clear(&retval);
+    avm_memcell_clear(&ax);
+    avm_memcell_clear(&bx);
+    avm_memcell_clear(&cx);
+    
     for(int i=0; i<AVM_STACKSIZE; ++i) {
         avm_memcell_clear(&stack[i]);
     }
 
-    // avm_memcell_clear(&retval);
-    // avm_memcell_clear(&ax);
-    // avm_memcell_clear(&bx);
-    // avm_memcell_clear(&cx);
 }
 
 static void avm_init_stack(void) {

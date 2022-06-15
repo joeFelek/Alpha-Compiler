@@ -37,16 +37,18 @@ void execute_arithmetic (instruction* instr) {
     assert(rv1 && rv2);
 
     if(rv1->type == string_m && rv2->type == string_m && instr->opcode == add_v) {
+        char *s = malloc(strlen(rv1->data.strVal)+strlen(rv2->data.strVal)+1);
+        sprintf(s, "%s%s", rv1->data.strVal, rv2->data.strVal);
         avm_memcell_clear(lv);
         lv->type = string_m;
-        lv->data.strVal = malloc(strlen(rv1->data.strVal)+strlen(rv2->data.strVal)+1);
-        sprintf(lv->data.strVal, "%s%s", rv1->data.strVal, rv2->data.strVal);
-    }else if(rv1->type == number_m && rv2->type == number_m) {
+        lv->data.strVal = s;
+    
+    }else if(rv1->type != number_m || rv2->type != number_m) {
+        avm_error("not a number in arithmetic!");
+    }else {
         arithmetic_func_t op = arithmeticFuncs[instr->opcode - add_v];
         avm_memcell_clear(lv);
         lv->type = number_m;
         lv->data.numVal = (*op)(rv1->data.numVal, rv2->data.numVal);
-    }else {
-        avm_error("not a number in arithmetic!");
     }
 }
