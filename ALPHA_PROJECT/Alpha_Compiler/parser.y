@@ -14,6 +14,8 @@ void custom_warning(const char *str, ...);
 extern int yylex();
 extern int yylineno;
 extern char* yytext;
+extern FILE *yyin;
+void yyrestart(FILE *);
 
 extern struct SymTable_S *symTable;
 extern struct ScopeList *scopeList;
@@ -586,6 +588,24 @@ void freeAll(void) {
 
 int main (int argc, char **argv) {
 	
+	yyin = stdin;
+	
+	for (int i = 1; i < argc; ++i) {
+        if (argv[i][0] == '-') {
+            if (!strcmp(argv[i], "-o")) ++i;
+            continue;
+        }
+        FILE *f = fopen(argv[i], "r");
+        if (!f) {
+            fprintf(stderr, "error: cannot open '%s'\n", argv[i]);
+            return 1;
+        }
+        yyin = f;
+        break;
+    }
+	
+	yyrestart(yyin);
+
 	initSymTable();
 	yyparse();
 	

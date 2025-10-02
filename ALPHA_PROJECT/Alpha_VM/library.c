@@ -27,15 +27,16 @@ void libfunc_print(void) {
 
 int isNumber(char *s) {
     int dot = 0;
-    for (int i = 0; s[i]!= '\0'; ++i) 
-        if(!isdigit(s[i])) 
-            if(s[i] == '.')
-                if(dot)
-                    return 0;
-                else 
-                    dot = 1;
-            else
-                return 0;
+    for (int i = 0; s[i] != '\0'; ++i) {
+        if (isdigit(s[i])) continue;
+
+        if (s[i] == '.') {
+            if (dot) return 0;
+            dot = 1;
+        } else {
+            return 0;
+        }
+    }
     return 1;
 }
 

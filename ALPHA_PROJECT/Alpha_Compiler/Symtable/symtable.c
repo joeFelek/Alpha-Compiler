@@ -346,7 +346,7 @@ SymbolTableEntry* symtable_FUNC(char* name) {
 		yyerror("syntax error, collision with library function: ", CYN, name, RESET);
 		return newSymEntry(name, yylineno, USERFUNC, current_scope, func_scope);
 	}
-	if(e = lookup(name, current_scope)) {
+	if((e = lookup(name, current_scope))) {
 		char *line = malloc(sizeof(char)*(int)log10(e->value.varVal->line));
 		sprintf(line, "%d", e->value.varVal->line);
 		yyerror("syntax error, redeclared ", CYN, name, RESET, ", first declared as ", symbolTypeToString(e->type), " at line ", line);
