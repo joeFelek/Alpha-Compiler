@@ -27,7 +27,7 @@ async function compileSource() {
     compiler.FS.writeFile('program.al', code);
     const exitCode = compiler.callMain(['program.al']);
     if (exitCode !== 0) {
-        logErr(`[compiler] Compilation failed with exit code ${exitCode}`);
+        logErr(`[compiler] Compilation failed`);
         try { compiler.FS.unlink('alpha.abc'); } catch (_) {}
         return null;
     }
@@ -43,7 +43,11 @@ async function initializeVM(byteCode) {
 }
 
 async function runBytecode() {
-    vm.callMain(['alpha.abc']);
+    const exitCode = vm.callMain(['alpha.abc']);
+    vm.FS.unlink('alpha.abc');
+    if (exitCode !== 0) {
+        logErr(`[vm] Runtime failed`);
+    }
 }
 
 $('#btn-run').addEventListener('click', async () => {

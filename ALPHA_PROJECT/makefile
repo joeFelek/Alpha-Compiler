@@ -55,7 +55,7 @@ clean:
 .PHONY: wasm wasm-clean
 
 wasm: web/alphac.js web/alpha.js
-	@echo "WASM build complete. Open web/index.html with a static server, or push web/ to GitHub Pages."
+	@echo "WASM build complete."
 
 web/alphac.js: $(ALPHAC_SRC)
 	$(EMCC) -o $@ $(ALPHAC_SRC) $(EMFLAGS_ALPHAC) -lm

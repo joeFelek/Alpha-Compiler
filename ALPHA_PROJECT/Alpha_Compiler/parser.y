@@ -609,24 +609,25 @@ int main (int argc, char **argv) {
 	initSymTable();
 	yyparse();
 	
-	if(warningcounter) {
-		printf("\n\n");
-		if(warningcounter>1)
-			printf(MAGENTA BOLD"Compiled with %d warnings..."RESET, warningcounter);
-		else 
-			printf(MAGENTA BOLD"Compiled with 1 warning..."RESET);
+	if (errorcounter || warningcounter) {
+		const char *errorText   = (errorcounter   == 1) ? "error"   : "errors";
+		const char *warningText = (warningcounter == 1) ? "warning" : "warnings";
+		printf("\n\nCompiled with ");
+		if (errorcounter) {
+			printf(RED BOLD "%d %s" RESET, errorcounter, errorText);
+		}
+		if (errorcounter && warningcounter) {
+			printf(" & ");
+		}
+		if (warningcounter) {
+			printf(MAGENTA BOLD "%d %s" RESET, warningcounter, warningText);
+		}
+		printf("...\n\n");
+		if (errorcounter) return 1;
 	}
-	if(errorcounter) {
-		printf("\n\n");
-		if(errorcounter>1)
-			printf(RED BOLD"Compiled with %d errors..."RESET, errorcounter);
-		else 
-			printf(RED BOLD"Compiled with 1 error..."RESET);
-		printf("\n\n");
-		return 1;
-	}
-	if(!warningcounter) 
-		printf(GREEN BOLD"\n\nCompiled successfully" RESET "\n\n");
+	//	else {
+    //		printf(GREEN BOLD "\n\nCompiled successfully" RESET "\n\n");
+	//	}
 
 	backpatchIncomplFuncJumps();
 	generateTCode();

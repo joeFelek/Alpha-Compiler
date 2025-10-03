@@ -28,6 +28,7 @@ unsigned topsp = 0;
 unsigned pc = 0;
 unsigned curr_line = 0;
 unsigned char execution_finished = 0;
+unsigned char execution_finished_with_errors = 0;
 
 /** call **/
 int totalActuals = 0;
@@ -157,7 +158,7 @@ int main(int argc, char **argv) {
     for(;execute_cycle(););
     
     freeAll();
-    return 0;
+    return execution_finished_with_errors;
 }
 
 void avm_error(char* format, ...) {
@@ -195,6 +196,7 @@ void avm_error(char* format, ...) {
     va_end(ap);
 
     execution_finished = 1;
+    execution_finished_with_errors = 1;
 }
 
 void avm_warning(char* format, ...) {
