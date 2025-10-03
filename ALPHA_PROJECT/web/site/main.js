@@ -1,7 +1,6 @@
 const $ = (sel) => document.querySelector(sel);
 const outEl = $('#output');
 
-// ANSI coloring
 const ansi_up = new AnsiUp();
 ansi_up.use_classes = false;
 
@@ -14,7 +13,7 @@ function appendAnsi(text) {
 const log = (msg = '') => appendAnsi(msg);
 const logErr = (msg = '') => appendAnsi(msg);
 
-let vm = null;
+let vmWorker = null;
 
 async function compileSource() {
     const compiler = await CompilerModule({
@@ -34,33 +33,48 @@ async function compileSource() {
     return compiler.FS.readFile('alpha.abc');
 }
 
-async function initializeVM(byteCode) {
-    vm = await AlphaModule({
-        print: log,
-        printErr: logErr,
+function initWorker() {
+    return new Promise((resolve) => {
+        vmWorker = new Worker('site/vm-worker.js');
+
+        vmWorker.onmessage = (e) => {
+            const { type, text } = e.data;
+            if (type === 'stdout') log(text);
+            if (type === 'stderr') logErr(text);
+            if (type === 'done') log('[vm] Execution finished');
+            if (type === 'ready') resolve();
+        };
+
+        vmWorker.postMessage({ type: 'init' });
     });
-    vm.FS.writeFile('alpha.abc', byteCode);
 }
 
-async function runBytecode() {
-    const exitCode = vm.callMain(['alpha.abc']);
-    vm.FS.unlink('alpha.abc');
-    if (exitCode !== 0) {
-        logErr(`[vm] Runtime failed`);
-    }
+async function restartWorker() {
+    if (vmWorker) 
+        vmWorker.terminate();
+    await initWorker();  
 }
 
 $('#btn-run').addEventListener('click', async () => {
     outEl.innerHTML = '';
     try {
         const byteCode = await compileSource();
-        if (byteCode === null) return;
-        await initializeVM(byteCode);
-        await runBytecode();
+        if (byteCode === null) 
+            return;
+
+        await restartWorker();
+        vmWorker.postMessage({ type: 'run', byteCode });
     } catch (e) {
         console.error(e);
     }
 });
 
-$('#btn-clear').addEventListener('click', () => { outEl.innerHTML = ''; });
+$('#btn-stop').addEventListener('click', () => {
+    if (vmWorker) {
+        vmWorker.terminate();
+        logErr('[vm] Execution stopped.');
+        vmWorker = null;
+    }
+});
 
+$('#btn-clear').addEventListener('click', () => { outEl.innerHTML = ''; });

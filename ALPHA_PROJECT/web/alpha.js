@@ -4565,9 +4565,9 @@ function checkIncomingModuleAPI() {
 }
 
 // Imports from the Wasm binary.
+var _fflush = makeInvalidEarlyAccess('_fflush');
 var _main = Module['_main'] = makeInvalidEarlyAccess('_main');
 var ___funcs_on_exit = makeInvalidEarlyAccess('___funcs_on_exit');
-var _fflush = makeInvalidEarlyAccess('_fflush');
 var _emscripten_stack_get_end = makeInvalidEarlyAccess('_emscripten_stack_get_end');
 var _emscripten_stack_get_base = makeInvalidEarlyAccess('_emscripten_stack_get_base');
 var _strerror = makeInvalidEarlyAccess('_strerror');
@@ -4578,9 +4578,9 @@ var __emscripten_stack_alloc = makeInvalidEarlyAccess('__emscripten_stack_alloc'
 var _emscripten_stack_get_current = makeInvalidEarlyAccess('_emscripten_stack_get_current');
 
 function assignWasmExports(wasmExports) {
+  _fflush = createExportWrapper('fflush', 1);
   Module['_main'] = _main = createExportWrapper('__main_argc_argv', 2);
   ___funcs_on_exit = createExportWrapper('__funcs_on_exit', 0);
-  _fflush = createExportWrapper('fflush', 1);
   _emscripten_stack_get_end = wasmExports['emscripten_stack_get_end'];
   _emscripten_stack_get_base = wasmExports['emscripten_stack_get_base'];
   _strerror = createExportWrapper('strerror', 1);

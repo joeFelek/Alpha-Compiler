@@ -19,6 +19,7 @@ void libfunc_print(void) {
     for(int i=0; i<n; ++i) {
         char* s = avm_tostring(avm_get_actual(i));
         printf("%s", s);
+        fflush(stdout);
         free(s);
     }
     avm_memcell_clear(&retval);
