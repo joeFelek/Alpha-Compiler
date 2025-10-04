@@ -10,7 +10,7 @@ This project contains the source code of the Alpha programming language compiler
 
 #### 🧪 About the Alpha Language
 
-Alpha is a dynamically typed, imperative, block-structured language with a syntax inspired by C and modern scripting languages. <br>It was originally designed as part of a university compiler course.<br>
+Alpha is a dynamically typed, imperative, block-structured language with a syntax inspired by C and modern scripting languages. It was originally designed as part of a university compiler course.<br>
 
 ```javascript
 function Fibonacci(n) {
