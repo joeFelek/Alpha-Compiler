@@ -10,9 +10,7 @@ onmessage = async (e) => {
       print: (text) => postMessage({ type: 'stdout', text }),
       printErr: (text) => postMessage({ type: 'stderr', text }),
       locateFile: (path, prefix) => {
-        if (path.endsWith('.wasm')) {
-          return '../' + path;
-        }
+        if (path.endsWith('.wasm')) return '../' + path;
         return prefix + path;
       }
     });
