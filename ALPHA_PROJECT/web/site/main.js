@@ -22,7 +22,7 @@ async function compileSource() {
         stdin: () => {}
     });
 
-    const code = $('#source').value;
+    const code = editor.getValue();
     compiler.FS.writeFile('program.al', code);
     const exitCode = compiler.callMain(['program.al']);
     if (exitCode !== 0) {
@@ -35,13 +35,16 @@ async function compileSource() {
 
 function initWorker() {
     return new Promise((resolve) => {
-        vmWorker = new Worker('site/vm-worker.js');
+        const url = new URL('./site/vm-worker.js', window.location.href);
+        url.searchParams.set('cb', Date.now().toString());
+        vmWorker = new Worker(url.toString());
 
         vmWorker.onmessage = (e) => {
             const { type, text } = e.data;
             if (type === 'stdout') log(text);
             if (type === 'stderr') logErr(text);
             if (type === 'done') log('[vm] Execution finished');
+            if (type === 'failed') logErr('[vm] Runtime failed');
             if (type === 'ready') resolve();
         };
 
@@ -55,8 +58,11 @@ async function restartWorker() {
     await initWorker();  
 }
 
-$('#btn-run').addEventListener('click', async () => {
+function clearOutput() {
     outEl.innerHTML = '';
+}
+
+$('#btn-run').addEventListener('click', async () => {
     try {
         const byteCode = await compileSource();
         if (byteCode === null) 
