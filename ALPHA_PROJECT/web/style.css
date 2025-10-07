@@ -10,7 +10,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -27,7 +28,8 @@ main.layout {
   max-width: 1400px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Editor | Right Panel */
+  grid-template-columns: 1fr 1fr;
+  /* Editor | Right Panel */
   gap: var(--gap);
   height: 90vh;
 }
@@ -36,8 +38,10 @@ main.layout {
 .editor-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;               /* take full column height */
-  max-height: 100vh;          /* don't exceed viewport height */
+  height: 100%;
+  /* take full column height */
+  max-height: 100vh;
+  /* don't exceed viewport height */
 }
 
 .editor-panel .panel.editor {
@@ -48,9 +52,11 @@ main.layout {
 }
 
 #editor {
-  flex: 1;                    /* take all remaining space */
+  flex: 1;
+  /* take all remaining space */
   min-height: 300px;
-  max-height: 80vh;           /* you can tweak this */
+  max-height: 80vh;
+  /* you can tweak this */
   border: 1px solid #2b3356;
   border-radius: 10px;
   background: #1e1e1e;
@@ -70,8 +76,9 @@ button {
   font-weight: 600;
   background: linear-gradient(180deg, #3d63ff, #2847ff);
   color: white;
-  box-shadow: 0 8px 20px rgba(40,71,255,.35);
+  box-shadow: 0 8px 20px rgba(40, 71, 255, .35);
 }
+
 button:hover {
   filter: brightness(1.05);
 }
@@ -114,10 +121,12 @@ button:hover {
 #output::-webkit-scrollbar {
   width: 8px;
 }
+
 #output::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 4px;
 }
+
 #output::-webkit-scrollbar-thumb:hover {
   background: #777;
 }

@@ -1,33 +1,44 @@
 const $ = (sel) => document.querySelector(sel);
-const outEl = $('#output');
+const consoleEl = $('#output');
+
+function clearOutput() {
+    consoleEl.innerHTML = '';
+}
+
+/************* Ansi output  **************/
+const GREY = '\x1b[38;5;247m';
+const RESET = '\x1b[0m';
 
 const ansi_up = new AnsiUp();
 ansi_up.use_classes = false;
 
 function appendAnsi(text) {
     const html = ansi_up.ansi_to_html(text);
-    outEl.innerHTML += html + '<br>';
-    outEl.scrollTop = outEl.scrollHeight;
+    consoleEl.innerHTML += html + '<br>';
+    consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
 const log = (msg = '') => appendAnsi(msg);
 const logErr = (msg = '') => appendAnsi(msg);
+/*****************************************/
 
+/*************** Worker *****************/
 let vmWorker = null;
 
 async function compileSource() {
     const compiler = await CompilerModule({
         print: log,
         printErr: logErr,
-        stdin: () => {}
+        stdin: () => { }
     });
 
     const code = editor.getValue();
     compiler.FS.writeFile('program.al', code);
     const exitCode = compiler.callMain(['program.al']);
     if (exitCode !== 0) {
-        logErr(`[compiler] Compilation failed`);
-        try { compiler.FS.unlink('alpha.abc'); } catch (_) {}
+        logErr(GREY + '[compiler] Compilation failed' + RESET);
+        try { compiler.FS.unlink('alpha.abc'); } catch (_) { }
+        if (vmWorker) vmWorker.terminate();
         return null;
     }
     return compiler.FS.readFile('alpha.abc');
@@ -43,29 +54,34 @@ function initWorker() {
             const { type, text } = e.data;
             if (type === 'stdout') log(text);
             if (type === 'stderr') logErr(text);
-            if (type === 'done') log('[vm] Execution finished');
-            if (type === 'failed') logErr('[vm] Runtime failed');
             if (type === 'ready') resolve();
+            if (type === 'done') log(GREY + '[vm] Execution finished' + RESET);
+            if (type === 'failed') logErr(GREY + '[vm] Execution failed' + RESET);
+            if (type === 'done' || type === 'failed') terminateWorker();
         };
 
         vmWorker.postMessage({ type: 'init' });
     });
 }
 
-async function restartWorker() {
-    if (vmWorker) 
+function terminateWorker() {
+    if (vmWorker)
         vmWorker.terminate();
-    await initWorker();  
+    vmWorker = null;
 }
 
-function clearOutput() {
-    outEl.innerHTML = '';
+async function restartWorker() {
+    terminateWorker();
+    await initWorker();
 }
+/****************************************/
+
+/*********** Button Events **************/
 
 $('#btn-run').addEventListener('click', async () => {
     try {
         const byteCode = await compileSource();
-        if (byteCode === null) 
+        if (byteCode === null)
             return;
 
         await restartWorker();
@@ -77,10 +93,9 @@ $('#btn-run').addEventListener('click', async () => {
 
 $('#btn-stop').addEventListener('click', () => {
     if (vmWorker) {
-        vmWorker.terminate();
-        logErr('[vm] Execution stopped.');
-        vmWorker = null;
+        terminateWorker();
+        logErr(GREY + '[vm] Execution stopped.' + RESET);
     }
 });
 
-$('#btn-clear').addEventListener('click', () => { outEl.innerHTML = ''; });
+$('#btn-clear').addEventListener('click', () => { consoleEl.innerHTML = ''; });

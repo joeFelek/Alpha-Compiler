@@ -21,9 +21,9 @@ onmessage = async (e) => {
     vmInstance.FS.writeFile('alpha.abc', byteCode);
     const exitCode = vmInstance.callMain(['alpha.abc']);
     vmInstance.FS.unlink('alpha.abc');
-    if (exitCode) 
-      postMessage({type : 'failed'});
-    else 
+    if (exitCode)
+      postMessage({ type: 'failed' });
+    else
       postMessage({ type: 'done' });
   }
 };
