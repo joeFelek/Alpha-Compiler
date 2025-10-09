@@ -268,9 +268,15 @@ unsigned tempcounter = 1;
 char* tempname = (char*) 0;
 
 char* newTempName(void) {
-    tempname = realloc(tempname, (int)log(tempcounter)+3);
-	sprintf(tempname, "$t%d", tempcounter++);
-	return tempname;
+    // compute required size precisely
+    size_t need = (size_t)snprintf(NULL, 0, "$t%u", tempcounter) + 1; // +1 for '\0'
+    tempname = realloc(tempname, need);
+    if (!tempname) {
+        yyerror("out of memory");
+        abort();
+    }
+    snprintf(tempname, need, "$t%u", tempcounter++);
+    return tempname;
 }
 
 void resetTemp(void) {
@@ -565,20 +571,23 @@ incomplFuncJumps_t* incomplFuncJumpsTail = (incomplFuncJumps_t*) 0;
 
 void pushFuncJump(unsigned label) {
 	incomplFuncJumps_t* newj = malloc(sizeof(incomplFuncJumps_t));
-	newj->retNum = 0;
-	newj->retLabels = (unsigned*) 0;
-	newj->start = label;
-	newj->end = 0;
-	newj->next = incomplFuncJumpsTop;
-	incomplFuncJumpsTop = newj;
-	if(!incomplFuncJumpsHead) {
-		incomplFuncJumpsHead = newj;
-		incomplFuncJumpsTail = newj;
-		newj->prev = NULL;
-	}else {
-		incomplFuncJumpsTail->prev = newj;
-		incomplFuncJumpsTail = newj;
-	}
+    memset(newj, 0, sizeof(*newj));
+    newj->retNum = 0;
+    newj->retLabels = (unsigned*) 0;
+    newj->start = label;
+    newj->end = 0;
+
+    newj->next = incomplFuncJumpsTop;
+    incomplFuncJumpsTop = newj;
+
+    if(!incomplFuncJumpsHead) {
+        incomplFuncJumpsHead = newj;
+        incomplFuncJumpsTail = newj;
+        newj->prev = NULL;
+    } else {
+        newj->prev = incomplFuncJumpsTail;
+        incomplFuncJumpsTail = newj;
+    }
 }
 
 void pushRetJump(unsigned label) {
@@ -618,13 +627,14 @@ unsigned patchFuncJump(incomplFuncJumps_t *index) {
 }
 
 void backpatchIncomplFuncJumps(void) {
-	incomplFuncJumps_t* index = incomplFuncJumpsHead;
-
-	while(index) {
-		if(!quads[index->start-1].label) 
-			patchFuncJump(index);
-		index = index->prev;
-	}
+	incomplFuncJumps_t* index = incomplFuncJumpsTail;
+    while(index) {
+        if(index->start > 0 && (unsigned)(index->start-1) < currQuad) {
+            if(!quads[index->start-1].label)
+                patchFuncJump(index);
+        }
+        index = index->prev;
+    }
 }
 
 
