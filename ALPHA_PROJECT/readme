@@ -1,8 +1,8 @@
-## How to run:
+## How to run in CLI:
 
     make
     
-    ./alphac < testfile <options>
+    ./alphac < testfile <options>   or   ./alphac testfile <options>
         <options>:
             -s: print symbol table
             -q: print quad list
@@ -13,13 +13,3 @@
         <binary file>: if specified then execute it 
                        if not then it executes alpha.abc (default binary file name)
 
-
-## Comments: 
-
-    Ilopoihsa:  
-        * ola ta basika;
-        * ola ta library functions;
-        * string concatination with '+' symbol --> "s1" + "s2" == "s1s2";
-        * functor with dispatcher "()";
-
-    den prosthesa epipleon table indexes pera apo ta num kai ta string.
