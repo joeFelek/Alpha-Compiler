@@ -7,32 +7,30 @@ require(['vs/editor/editor.main'], function () {
         theme: 'vs-dark',
         automaticLayout: true,
         fontSize: 14,
-        minimap: { enabled: false }
+        minimap: { enabled: true },
+        autoIndent: 'full',
+        autoClosingBrackets: 'languageDefined',
     });
 
-    setTimeout(() => {
-        const oldDefine = window.define;
-        window.define = undefined;
+    const oldDefine = window.define;
+    window.define = undefined;
 
-        const loadScript = (src) => new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = src;
-            s.onload = resolve;
-            s.onerror = reject;
-            document.body.appendChild(s);
-        });
+    const loadScript = (src) => new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.body.appendChild(s);
+    });
 
-        (async () => {
-            await loadScript('site/ansi_up.js');
-            await loadScript('alphac.js');
-            await loadScript('alpha.js');
-            await loadScript('site/alpha_editor.js');
-            monaco.editor.setModelLanguage(window.editor.getModel(), 'alpha');
-            await loadScript('site/main.js');
-            window.define = oldDefine;
-        })().catch(err => {
-            window.define = oldDefine;
-            console.error(err);
-        });
-    }, 200);
+    (async () => {
+        await loadScript('alphac.js');
+        await loadScript('alpha.js');
+        await loadScript('site/alpha_editor.js');
+        await loadScript('site/main.js');
+        window.define = oldDefine;
+    })().catch(err => {
+        window.define = oldDefine;
+        console.error(err);
+    });
 });

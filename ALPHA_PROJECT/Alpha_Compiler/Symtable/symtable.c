@@ -12,7 +12,7 @@ unsigned int func_scope = 0;
 char *libFuncNames[LIBFUNCNUM] = {
 	"print", "input", "objectmemberkeys", "objecttotalmembers", 
 	"objectcopy", "totalarguments", "argument", "typeof", "strtonum",
-	"sqrt", "cos", "sin"
+	"sqrt", "cos", "sin", "trunc"
 };
 
 char* anonymousFuncBuf = NULL;

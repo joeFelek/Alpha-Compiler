@@ -114,7 +114,7 @@ ID_ [a-zA-Z_][a-zA-Z_0-9]*
     yy_push_state(ESC_);
 }
 
-<STRING_>[^\\\n\"]+ {
+<STRING_>[^\\\n\"\r]+ {
     char *yy = yytext;
     content_temp_buf = realloc(content_temp_buf, strlen(content_temp_buf) + strlen(yytext) + 1);
     content_temp_ptr = content_temp_buf + strlen(content_temp_buf);
@@ -133,6 +133,38 @@ ID_ [a-zA-Z_][a-zA-Z_0-9]*
 <ESC_>t              *content_temp_ptr++ = '\t';*content_temp_ptr = '\0';yy_pop_state();
 <ESC_>v              *content_temp_ptr++ = '\v';*content_temp_ptr = '\0';yy_pop_state();
 <ESC_>(\\|\'|\"|\?)  *content_temp_ptr++ = *yytext;*content_temp_ptr = '\0';yy_pop_state();
+
+<ESC_>[xX][0-9A-Fa-f]{1,2} {
+    long v = strtol(yytext + 1, NULL, 16);
+    content_temp_buf = realloc(content_temp_buf, strlen(content_temp_buf) + 2);
+    content_temp_ptr = content_temp_buf + strlen(content_temp_buf);
+    *content_temp_ptr++ = (char)(v & 0xFF);
+    *content_temp_ptr = '\0';
+    yy_pop_state();
+}
+
+<ESC_>[xX] {
+    yywarning("unknown escape sequence: ", CYN, "'\\x'", RESET, " in string ", CYN, "\"", content_temp_buf, "\"", RESET);
+    content_temp_buf = realloc(content_temp_buf, strlen(content_temp_buf) + 2);
+    content_temp_ptr = content_temp_buf + strlen(content_temp_buf);
+    *content_temp_ptr++ = 'x';
+    *content_temp_ptr = '\0';
+    yy_pop_state();
+}
+
+<ESC_>[0-7]{1,3} {
+    long v = strtol(yytext, NULL, 8);
+    if (v == 0) {
+        yywarning("escape produces NUL (\\0) which is unsupported in Alpha strings; ignoring");
+        yy_pop_state();
+    } else {
+        content_temp_buf = realloc(content_temp_buf, strlen(content_temp_buf) + 2);
+        content_temp_ptr = content_temp_buf + strlen(content_temp_buf);
+        *content_temp_ptr++ = (char)(v & 0xFF);
+        *content_temp_ptr = '\0';
+        yy_pop_state();
+    }
+}
 
 <ESC_>\n {
     BEGIN(INITIAL);

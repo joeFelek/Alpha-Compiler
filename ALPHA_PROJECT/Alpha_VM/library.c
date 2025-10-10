@@ -1,7 +1,7 @@
 #include "avm.h"
 
 #define PI 3.14159265
-#define TOTAL_LIBFUNCS 12
+#define TOTAL_LIBFUNCS 13
 
 extern void execute_funcexit(instruction* instr);
 
@@ -252,6 +252,25 @@ void libfunc_strtonum(void) {
     }
 }
 
+void libfunc_trunc(void) {
+    unsigned n = avm_total_actuals();
+    avm_memcell_clear(&retval);
+
+    if(n!=1) {
+        avm_error("one argument (not "CYN"%d"RESET") expected in "BWHT"'trunc'"RESET"!", n);
+        retval.type = nil_m;   
+    }else {
+        avm_memcell* arg = avm_get_actual(0);
+        if(arg->type != number_m) {
+            avm_warning("expected argument of type number in function "BWHT"trunc"RESET" but got %s", memcell_type_tostring[arg->type]);
+            retval.type = nil_m;
+        }else {
+            retval.type = number_m;
+            retval.data.numVal = (int)(arg->data.numVal);
+        }
+    }  
+}
+
 void libfunc_sqrt(void) {
     unsigned n = avm_total_actuals();
     avm_memcell_clear(&retval);
@@ -324,7 +343,8 @@ library_func_t libraryFuncs[] = {
     libfunc_strtonum,
     libfunc_sqrt,
     libfunc_cos,
-    libfunc_sin
+    libfunc_sin,
+    libfunc_trunc
 };
 
 library_func_t avm_getlibraryfunc(char* id) {

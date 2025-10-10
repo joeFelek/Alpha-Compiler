@@ -11,7 +11,7 @@
     const wordOps = ['not', 'and', 'or'];
     const libfuncs = [
         'print', 'input', 'objectmemberkeys', 'objecttotalmembers', 'objectcopy',
-        'totalarguments', 'argument', 'typeof', 'strtonum', 'sqrt', 'cos', 'sin'
+        'totalarguments', 'argument', 'typeof', 'strtonum', 'sqrt', 'cos', 'sin', 'trunc'
     ];
     const operators = [
         '+', '-', '*', '/', '%', '=', '==', '!=', '<', '>', '<=', '>=',
@@ -28,7 +28,7 @@
         libfuncs,
         operators,
         symbols: /[=><!~?:&|+\-*\/\^%\.]+/,
-        escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4})/,
+        escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,2}|[0-7]{1,3})/,
 
         tokenizer: {
             root: [
@@ -202,6 +202,7 @@
 
             // strings
             string: [
+                [/\\x(?![0-9A-Fa-f])/, 'string.escape.invalid'], // bare \x
                 [/@escapes/, 'string.escape'],
                 [/\\./, 'string.escape.invalid'],
                 [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }],
@@ -244,14 +245,29 @@
         ],
         onEnterRules: [
             {
-                beforeText: /.*\{\s*$/,
-                action: { indentAction: monaco.languages.IndentAction.Indent }
+                beforeText: /^\s*.*\{\s*$/,
+                afterText: /^\s*\}/,
+                action: {
+                    indentAction: monaco.languages.IndentAction.IndentOutdent
+                }
             },
             {
-                beforeText: /^\s*\}\s*$/,
-                action: { indentAction: monaco.languages.IndentAction.Outdent }
+                beforeText: /^\s*.*\{\s*$/,
+                action: {
+                    indentAction: monaco.languages.IndentAction.Indent
+                }
+            },
+            {
+                beforeText: /^\s*\}/,
+                action: {
+                    indentAction: monaco.languages.IndentAction.Outdent
+                }
             }
-        ]
+        ],
+        indentationRules: {
+            increaseIndentPattern: /{\s*$/,
+            decreaseIndentPattern: /^\s*}/
+        }
     });
 
     // Autocomplete 
@@ -379,4 +395,5 @@
     });
 
     monaco.editor.setTheme('alpha-one-dark');
+    monaco.editor.setModelLanguage(window.editor.getModel(), 'alpha');
 })();

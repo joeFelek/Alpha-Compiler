@@ -9,21 +9,16 @@ onmessage = async (e) => {
     vmInstance = await AlphaModule({
       print: (text) => postMessage({ type: 'stdout', text }),
       printErr: (text) => postMessage({ type: 'stderr', text }),
-      locateFile: (path, prefix) => {
-        if (path.endsWith('.wasm')) return '../' + path;
-        return prefix + path;
-      }
+      locateFile: (path, prefix) => path.endsWith('.wasm') ? ('../' + path) : (prefix + path)
     });
     postMessage({ type: 'ready' });
+    return;
   }
 
   if (type === 'run' && vmInstance) {
     vmInstance.FS.writeFile('alpha.abc', byteCode);
     const exitCode = vmInstance.callMain(['alpha.abc']);
     vmInstance.FS.unlink('alpha.abc');
-    if (exitCode)
-      postMessage({ type: 'failed' });
-    else
-      postMessage({ type: 'done' });
+    postMessage({ type: exitCode ? 'failed' : 'done' });
   }
 };
