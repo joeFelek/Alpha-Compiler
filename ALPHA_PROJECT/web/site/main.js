@@ -124,7 +124,7 @@ function initWorker() {
 
         vmWorker.onmessage = (e) => {
             const { type, text } = e.data;
-            if (type === 'stdout') term.writeln(text);        // << use writeln (print() lines are newline-less)
+            if (type === 'stdout') term.writeln(text);        // VM prints one chunk per call
             if (type === 'stderr') { capturedStderr += (text || '') + '\n'; term.writeln(text); }
             if (type === 'ready') resolve();
             if (type === 'done') term.writeln(GREY + '[vm] Execution finished' + RESET);
@@ -159,7 +159,7 @@ async function compileSource() {
     let capturedStderr = '';
 
     const compiler = await CompilerModule({
-        print: (t) => term.writeln(t),                        // << writeln
+        print: (t) => term.writeln(t),
         printErr: (t) => { capturedStderr += (t || '') + '\n'; term.writeln(t); },
         stdin: () => { },
     });
@@ -202,6 +202,30 @@ editor.onDidChangeModelContent((e) => {
 /* ---------- Buttons ---------- */
 const btnRun = $('#btn-run');
 const btnClear = $('#btn-clear');
+const btnExSyntax = $('#btn-ex-syntax');
+const btnExSimple = $('#btn-ex-simple');
+const btnExLife = $('#btn-ex-life');
+
+function putInEditor(code) {
+    if (!code) return;
+    editor.setValue(code);
+    clearAlphaMarkers();
+    editor.setScrollPosition({ scrollTop: 0 });
+    editor.setPosition({ lineNumber: 1, column: 1 });
+    editor.focus();
+}
+
+async function loadExample(url) {
+    const res = await fetch(url + '?cb=' + Date.now());
+    const code = await res.text();
+    putInEditor(code);
+}
+
+btnExSyntax.addEventListener('click', () => loadExample('examples/syntax.al'));
+
+btnExLife.addEventListener('click', () => loadExample('examples/game_of_life.al'));
+
+btnExSimple.addEventListener('click', () => loadExample('examples/simple.al'));
 
 btnRun.addEventListener('click', async () => {
     if (vmWorker) {
@@ -233,14 +257,6 @@ btnRun.addEventListener('click', async () => {
     }
 });
 
-// Clear output
-btnClear.addEventListener('click', () => {
-    term.write('\x1b[2J\x1b[3J\x1b[H');
-    clearAlphaMarkers();
-});
-
-
-// Clear output button
 btnClear.addEventListener('click', () => {
     term.write('\x1b[2J\x1b[3J\x1b[H'); // clear + home
     clearAlphaMarkers();

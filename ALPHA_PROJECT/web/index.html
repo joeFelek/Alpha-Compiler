@@ -19,7 +19,17 @@
   <main class="layout">
     <section class="editor-panel">
       <div class="panel editor">
-        <h2>Editor</h2>
+
+        <!-- NEW: header row with example buttons -->
+        <div class="editor-header">
+          <h2>Editor</h2>
+          <div class="actions">
+            <button id="btn-ex-syntax" class="chip">Alpha Syntax</button>
+            <button id="btn-ex-simple" class="chip">Simple Example</button>
+            <button id="btn-ex-life" class="chip">Game of Life</button>
+          </div>
+        </div>
+
         <div class="editor-shell">
           <div id="editor"></div>
         </div>
