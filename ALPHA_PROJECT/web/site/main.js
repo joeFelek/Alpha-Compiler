@@ -205,6 +205,9 @@ const btnClear = $('#btn-clear');
 const btnExSyntax = $('#btn-ex-syntax');
 const btnExSimple = $('#btn-ex-simple');
 const btnExLife = $('#btn-ex-life');
+const tglAutoClear = $('#toggle-autoclear');
+
+let autoClear = true;
 
 function putInEditor(code) {
     if (!code) return;
@@ -239,6 +242,7 @@ btnRun.addEventListener('click', async () => {
     }
 
     try {
+        if (autoClear) term.write('\x1b[2J\x1b[3J\x1b[H');
         const byteCode = await compileSource();
         if (byteCode === null) return;
 
@@ -261,3 +265,16 @@ btnClear.addEventListener('click', () => {
     term.write('\x1b[2J\x1b[3J\x1b[H'); // clear + home
     clearAlphaMarkers();
 });
+
+const savedAC = localStorage.getItem('alpha:autoClear');
+if (savedAC !== null) {
+    autoClear = savedAC === '1';
+}
+tglAutoClear.checked = autoClear;
+
+tglAutoClear.addEventListener('change', () => {
+    autoClear = tglAutoClear.checked;
+    localStorage.setItem('alpha:autoClear', autoClear ? '1' : '0');
+});
+
+

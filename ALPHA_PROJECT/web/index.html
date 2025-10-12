@@ -40,8 +40,16 @@
       <div class="panel console">
         <div class="console-header">
           <h2>Output</h2>
-          <button id="btn-clear" class="btn btn-ghost small">Clear Output</button>
+          <div class="console-tools">
+            <label class="toggle" title="Auto Clear">
+              <span class="tlabel">Auto Clear</span>
+              <input type="checkbox" id="toggle-autoclear" checked>
+              <span class="track"><span class="thumb"></span></span>
+            </label>
+            <button id="btn-clear" class="btn btn-ghost small">Clear Output</button>
+          </div>
         </div>
+
         <div id="term" class="term-frame"></div>
       </div>
     </section>
