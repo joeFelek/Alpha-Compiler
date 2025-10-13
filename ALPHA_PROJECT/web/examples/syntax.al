@@ -175,7 +175,8 @@ print("sumAll(1,2,3,4) = ", sumAll(1,2,3,4), "\n\n");
  
 print("sqrt(9)=", sqrt(9), " cos(0)=", cos(0), " sin(0)=", sin(0), "\n");
 print("trunc(3.99)=", trunc(3.99), "\n");
- 
+print("random(1, 10)=", random(1, 10), "\n");
+
 numStr = "123.50";
 numVal = strtonum(numStr);     // parse string to number
 print("strtonum(\"", numStr, "\") = ", numVal, "\n\n");
@@ -200,3 +201,9 @@ p2 = objectcopy(p);
 p2.x = 999;
 print("p.x=", p.x, " p2.x=", p2.x, "\n\n");
 
+/* 9) Sleep */
+print("sleep for 3 seconds...\n");
+for (s = 1; s < 4; ++s) {
+    sleep(1000);
+    print(s, "\n");
+}

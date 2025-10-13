@@ -30,7 +30,7 @@ extern int yylineno;
 
 #define HASH_MULTIPLIER 90
 #define DEFAULT_SIZE 512 				   /* symbol Table size */
-#define LIBFUNCNUM 13
+#define LIBFUNCNUM 15
 
 #define SCOPEUP current_scope++
 #define SCOPEDOWN current_scope--

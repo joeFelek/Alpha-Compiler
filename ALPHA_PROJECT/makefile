@@ -30,7 +30,9 @@ EMFLAGS_ALPHAC=$(EMFLAGS_COMMON) \
 # VM (alpha) WASM flags
 EMFLAGS_ALPHA=$(EMFLAGS_COMMON) \
 	-s EXIT_RUNTIME=1 \
-	-s EXPORT_NAME=\"AlphaModule\"
+	-s EXPORT_NAME=\"AlphaModule\" \
+	-s ASYNCIFY \
+	-s ASYNCIFY_IMPORTS=['nanosleep']
 
 # ===== Native build =====
 all: alphac alpha

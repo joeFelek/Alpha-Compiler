@@ -8,8 +8,15 @@ onmessage = async (e) => {
   if (type === 'init') {
     vmInstance = await AlphaModule({
       print: (text) => postMessage({ type: 'stdout', text }),
-      printErr: (text) => postMessage({ type: 'stderr', text }),
-      locateFile: (path, prefix) => path.endsWith('.wasm') ? ('../' + path) : (prefix + path)
+      printErr: (text) => {
+        if (text && /Cannot enlarge memory|Out of memory/i.test(text)) {
+          postMessage({ type: 'memory' });
+        }
+        else {
+          postMessage({ type: 'stderr', text });
+        }
+      },
+      locateFile: (path, prefix) => path.endsWith('.wasm') ? ('../' + path) : (prefix + path),
     });
     postMessage({ type: 'ready' });
     return;

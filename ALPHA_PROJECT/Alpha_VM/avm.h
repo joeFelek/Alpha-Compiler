@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <math.h>
+#include <time.h>
 
 #include "../Alpha_Compiler/Final_Code/instruction.h"
 

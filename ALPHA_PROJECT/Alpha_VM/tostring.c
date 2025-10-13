@@ -25,7 +25,9 @@ char* libraryFuncs_tostring[] = {
     "sqrt",
     "cos",
     "sin",
-    "trunc"
+    "trunc",
+    "random",
+    "sleep"
 };
 
 int isInteger(double val) {

@@ -1,7 +1,7 @@
 #include "avm.h"
 
 #define PI 3.14159265
-#define TOTAL_LIBFUNCS 13
+#define TOTAL_LIBFUNCS 15
 
 extern void execute_funcexit(instruction* instr);
 
@@ -150,7 +150,7 @@ void libfunc_objectcopy(void) {
     }else {
         avm_memcell *arg = avm_get_actual(0);
         if(arg->type != table_m) {
-            avm_warning("argument passed in 'objecttotalmembers' is not a table!"); 
+            avm_warning("argument passed in 'objectcopy' is not a table!"); 
             retval.type = nil_m;
             return;
         }
@@ -239,7 +239,7 @@ void libfunc_strtonum(void) {
     }else {
         avm_memcell* arg = avm_get_actual(0);
         if(arg->type != string_m) {
-            avm_warning("expected argument of type string in function "BWHT"strtonum"RESET" but got %s", memcell_type_tostring[arg->type]);
+            avm_warning("expected argument of type string in function "BWHT"'strtonum'"RESET" but got %s", memcell_type_tostring[arg->type]);
             retval.type = nil_m;
         }else {
             if(isNumber(arg->data.strVal)) {
@@ -262,7 +262,7 @@ void libfunc_trunc(void) {
     }else {
         avm_memcell* arg = avm_get_actual(0);
         if(arg->type != number_m) {
-            avm_warning("expected argument of type number in function "BWHT"trunc"RESET" but got %s", memcell_type_tostring[arg->type]);
+            avm_warning("expected argument of type number in function "BWHT"'trunc'"RESET" but got %s", memcell_type_tostring[arg->type]);
             retval.type = nil_m;
         }else {
             retval.type = number_m;
@@ -281,7 +281,7 @@ void libfunc_sqrt(void) {
     }else {
         avm_memcell* arg = avm_get_actual(0);
         if(arg->type != number_m) {
-            avm_warning("expected argument of type number in function "BWHT"sqrt"RESET" but got %s", memcell_type_tostring[arg->type]);
+            avm_warning("expected argument of type number in function "BWHT"'sqrt'"RESET" but got %s", memcell_type_tostring[arg->type]);
             retval.type = nil_m;
         }else if(arg->data.numVal < 0) {
             retval.type = nil_m;
@@ -302,7 +302,7 @@ void libfunc_cos(void) {
     }else {
         avm_memcell* arg = avm_get_actual(0);
         if(arg->type != number_m) {
-            avm_warning("expected argument of type number in function "BWHT"cos"RESET" but got %s", memcell_type_tostring[arg->type]);
+            avm_warning("expected argument of type number in function "BWHT"'cos'"RESET" but got %s", memcell_type_tostring[arg->type]);
             retval.type = nil_m;
         }else {
             retval.type = number_m;
@@ -321,11 +321,55 @@ void libfunc_sin(void) {
     }else {
         avm_memcell* arg = avm_get_actual(0);
         if(arg->type != number_m) {
-            avm_warning("expected argument of type number in function "BWHT"sin"RESET" but got %s", memcell_type_tostring[arg->type]);
+            avm_warning("expected argument of type number in function "BWHT"'sin'"RESET" but got %s", memcell_type_tostring[arg->type]);
             retval.type = nil_m;
         }else {
             retval.type = number_m;
             retval.data.numVal = sin(arg->data.numVal*PI/180);
+        }
+    }
+}
+
+void libfunc_random(void) {
+    unsigned n = avm_total_actuals();
+    avm_memcell_clear(&retval);
+
+    if(n!=2) {
+        avm_error("two arguments (not "CYN"%d"RESET") expected in "BWHT"'random'"RESET"!", n);
+        retval.type = nil_m;   
+    }else {
+        avm_memcell* arg0 = avm_get_actual(0);
+        avm_memcell* arg1 = avm_get_actual(1);
+        if(arg0->type != number_m || arg1->type != number_m) {
+            avm_memcell_t type = arg0->type != number_m ? arg0->type : arg1->type;
+            avm_warning("expected argument of type number in function "BWHT"'random'"RESET" but got %s", memcell_type_tostring[type]);
+            retval.type = nil_m;
+        }else {
+            retval.type = number_m;
+            retval.data.numVal = arg0->data.numVal + (double)rand() / ((double)RAND_MAX + 1.0) * (arg1->data.numVal - arg0->data.numVal);
+        }
+    }
+}
+
+void libfunc_sleep(void) {
+    unsigned n = avm_total_actuals();
+    avm_memcell_clear(&retval);
+
+    if(n!=1) {
+        avm_error("one argument (not "CYN"%d"RESET") expected in "BWHT"'sleep'"RESET"!", n);
+        retval.type = nil_m;   
+    }else {
+        avm_memcell* arg = avm_get_actual(0);
+        if(arg->type != number_m) {
+            avm_warning("expected argument of type number in function "BWHT"'sleep'"RESET" but got %s", memcell_type_tostring[arg->type]);
+            retval.type = nil_m;
+        }else {
+            struct timespec ts;
+            ts.tv_sec  = (time_t)floor(arg->data.numVal / 1000.0);
+            ts.tv_nsec  = (long)llround((arg->data.numVal - (double)ts.tv_sec * 1000.0) * 1e6);
+            nanosleep(&ts, &ts);
+            retval.type = bool_m;
+            retval.data.boolVal = 1;
         }
     }
 }
@@ -344,7 +388,9 @@ library_func_t libraryFuncs[] = {
     libfunc_sqrt,
     libfunc_cos,
     libfunc_sin,
-    libfunc_trunc
+    libfunc_trunc,
+    libfunc_random,
+    libfunc_sleep
 };
 
 library_func_t avm_getlibraryfunc(char* id) {

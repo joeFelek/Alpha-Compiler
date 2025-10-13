@@ -14,6 +14,8 @@ const term = new Terminal({
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
 term.open($('#term'));
+const showCursor = () => term.write('\x1b[?25h');
+const hideCursor = () => term.write('\x1b[?25l');
 
 /* ---------- Layout / Resize ---------- */
 let rId = 0;
@@ -141,14 +143,15 @@ function initWorker() {
             if (type === 'ready') resolve();
             if (type === 'done') term.writeln(GREY + '[vm] Execution finished' + RESET);
             if (type === 'failed') term.writeln(GREY + '[vm] Execution failed' + RESET);
-            if (type === 'done' || type === 'failed') {
+            if (type === 'done' || type === 'failed' || type === 'memory') {
                 terminateWorker();
                 btnRun.textContent = 'Run';
                 btnRun.classList.remove('btn-stop');
                 btnRun.classList.add('btn-primary');
-
+                showCursor();
                 const diags = parseDiagnostics(capturedStderr);
                 if (diags.length) setAlphaMarkers(diags, { jumpNow: true });
+                if (type === 'memory') term.writeln(GREY + '[vm] Out of memory' + RESET);
             }
         };
 
@@ -169,7 +172,6 @@ async function restartWorker() {
 /* ---------- Compile on Run ---------- */
 async function compileSource() {
     let capturedStderr = '';
-
     const compiler = await CompilerModule({
         print: (t) => term.writeln(t),
         printErr: (t) => { capturedStderr += (t || '') + '\n'; term.writeln(t); },
@@ -189,6 +191,7 @@ async function compileSource() {
         term.writeln(GREY + '[compiler] Compilation failed' + RESET);
         try { compiler.FS.unlink('alpha.abc'); } catch (_) { }
         if (vmWorker) vmWorker.terminate();
+        showCursor();
         return null;
     }
     return compiler.FS.readFile('alpha.abc');
@@ -217,8 +220,8 @@ window.editor.onDidChangeModelContent((e) => {
 const btnRun = $('#btn-run');
 const btnClear = $('#btn-clear');
 const btnExSyntax = $('#btn-ex-syntax');
-const btnExSimple = $('#btn-ex-simple');
 const btnExLife = $('#btn-ex-life');
+const btnExDonut = $('#btn-ex-donut');
 const tglAutoClear = $('#toggle-autoclear');
 
 let autoClear = true;
@@ -232,17 +235,17 @@ function putInEditor(code) {
     window.editor.focus();
 }
 
-function adjustGameOfLifeResolution(code) {
+function adjustExampleResolution(code) {
     // xterm.js exposes current geometry
     const rows = (typeof term !== "undefined" && term && term.rows) ? term.rows : 24;
     const cols = (typeof term !== "undefined" && term && term.cols) ? term.cols : 80;
 
     // Alpha draws each cell as "# " or "  " -> 2 columns per cell
     // You asked: H = (xterm rows - 1)
-    const H = Math.max(5, rows - 2);
+    const H = rows - 2;
 
     // Width: fit in available columns (2 chars per cell), leave a tiny safety margin
-    const W = Math.max(5, Math.floor((cols) / 2) - 1);
+    const W = Math.floor(cols / 2);
 
     // Replace the W = <num>; and H = <num>; lines in the Alpha source
     let out = code;
@@ -255,20 +258,21 @@ function adjustGameOfLifeResolution(code) {
 async function loadExample(url) {
     const res = await fetch(url + '?cb=' + Date.now());
     let code = await res.text();
-    if (url.includes('game_of_life.al')) {
-        code = adjustGameOfLifeResolution(code);
+    if (!url.includes('syntax.al')) {
+        code = adjustExampleResolution(code);
     }
     putInEditor(code);
     requestAnimationFrame(relayout);
 }
 
 btnExSyntax.addEventListener('click', () => loadExample('examples/syntax.al'));
-btnExSimple.addEventListener('click', () => loadExample('examples/simple.al'));
 btnExLife.addEventListener('click', () => loadExample('examples/game_of_life.al'));
+btnExDonut.addEventListener('click', () => loadExample('examples/donut.al'));
 
 btnRun.addEventListener('click', async () => {
     if (vmWorker) {
         // Already running → stop it
+        showCursor();
         terminateWorker();
         term.writeln(GREY + '[vm] Execution stopped.' + RESET);
         btnRun.textContent = 'Run';
@@ -281,11 +285,12 @@ btnRun.addEventListener('click', async () => {
         if (autoClear) term.write('\x1b[2J\x1b[3J\x1b[H');
         const byteCode = await compileSource();
         if (byteCode === null) return;
-
+        
         // Change to stop state (red)
         btnRun.textContent = 'Stop';
         btnRun.classList.remove('btn-primary');
         btnRun.classList.add('btn-stop');
+        hideCursor();
 
         await restartWorker();
         vmWorker.postMessage({ type: 'run', byteCode });

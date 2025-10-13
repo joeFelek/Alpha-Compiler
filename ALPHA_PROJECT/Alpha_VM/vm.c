@@ -144,6 +144,9 @@ static void avm_init_stack(void) {
 
 int main(int argc, char **argv) {
 
+    unsigned s = (unsigned)time(NULL) ^ (unsigned)clock();
+    srand(s);
+    
     int error_flag = 0;
 
     if(argc > 1) {
