@@ -1,3 +1,4 @@
+// NOTE: loaded after monaco in index.js; uses global `window.editor`
 const $ = (sel) => document.querySelector(sel);
 
 /* ---------- Terminal (xterm.js) ---------- */
@@ -5,7 +6,7 @@ const GREY = '\x1b[38;5;247m';
 const RESET = '\x1b[0m';
 
 const term = new Terminal({
-    convertEol: true,      // ok to keep on
+    convertEol: true,
     scrollback: 1000,
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
     fontSize: 14,
@@ -13,10 +14,21 @@ const term = new Terminal({
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
 term.open($('#term'));
-fitAddon.fit();
-window.addEventListener('resize', () => fitAddon.fit());
 
-// simple writers (strings only)
+/* ---------- Layout / Resize ---------- */
+let rId = 0;
+function relayout() {
+    try { if (window.editor) window.editor.layout(); } catch { }
+    try { fitAddon.fit(); } catch { }
+}
+window.addEventListener('resize', () => {
+    cancelAnimationFrame(rId);
+    rId = requestAnimationFrame(relayout);
+});
+// First layout pass after initial paint
+setTimeout(relayout, 0);
+
+/* ---------- Simple writers (strings only) ---------- */
 const log = (s = '') => term.write(s);
 const logLn = (s = '') => term.writeln(s);
 const logErr = (s = '') => term.write(s);
@@ -60,7 +72,7 @@ function lastCodeColumn(model, lineNumber) {
 
 function setAlphaMarkers(diags, { jumpNow = false } = {}) {
     currentDiags = diags.slice();
-    const model = editor.getModel();
+    const model = window.editor.getModel();
 
     const markers = currentDiags.map(d => {
         const line = d.line || 1;
@@ -82,16 +94,16 @@ function setAlphaMarkers(diags, { jumpNow = false } = {}) {
     if (jumpNow) {
         const firstErr = currentDiags.find(d => d.kind === 'error');
         if (firstErr?.line) {
-            editor.revealLineInCenter(firstErr.line);
-            editor.setPosition({ lineNumber: firstErr.line, column: firstCodeColumn(model, firstErr.line) });
-            editor.focus();
+            window.editor.revealLineInCenter(firstErr.line);
+            window.editor.setPosition({ lineNumber: firstErr.line, column: firstCodeColumn(model, firstErr.line) });
+            window.editor.focus();
         }
     }
 }
 
 function clearAlphaMarkers() {
     currentDiags = [];
-    monaco.editor.setModelMarkers(editor.getModel(), 'alpha-diagnostics', []);
+    monaco.editor.setModelMarkers(window.editor.getModel(), 'alpha-diagnostics', []);
 }
 
 function parseDiagnostics(stderrText) {
@@ -124,7 +136,7 @@ function initWorker() {
 
         vmWorker.onmessage = (e) => {
             const { type, text } = e.data;
-            if (type === 'stdout') term.writeln(text);        // VM prints one chunk per call
+            if (type === 'stdout') term.writeln(text);
             if (type === 'stderr') { capturedStderr += (text || '') + '\n'; term.writeln(text); }
             if (type === 'ready') resolve();
             if (type === 'done') term.writeln(GREY + '[vm] Execution finished' + RESET);
@@ -164,7 +176,7 @@ async function compileSource() {
         stdin: () => { },
     });
 
-    const code = editor.getValue();
+    const code = window.editor.getValue();
     clearAlphaMarkers();
 
     compiler.FS.writeFile('program.al', code);
@@ -183,7 +195,9 @@ async function compileSource() {
 }
 
 /* ---------- Clear markers on edited lines only ---------- */
-editor.onDidChangeModelContent((e) => {
+window.editor.onDidChangeModelContent((e) => {
+    localStorage.setItem('alpha:editorCode', window.editor.getValue());
+
     if (!currentDiags.length) return;
 
     const touched = new Set();
@@ -211,24 +225,46 @@ let autoClear = true;
 
 function putInEditor(code) {
     if (!code) return;
-    editor.setValue(code);
+    window.editor.setValue(code);
     clearAlphaMarkers();
-    editor.setScrollPosition({ scrollTop: 0 });
-    editor.setPosition({ lineNumber: 1, column: 1 });
-    editor.focus();
+    window.editor.setScrollPosition({ scrollTop: 0 });
+    window.editor.setPosition({ lineNumber: 1, column: 1 });
+    window.editor.focus();
+}
+
+function adjustGameOfLifeResolution(code) {
+    // xterm.js exposes current geometry
+    const rows = (typeof term !== "undefined" && term && term.rows) ? term.rows : 24;
+    const cols = (typeof term !== "undefined" && term && term.cols) ? term.cols : 80;
+
+    // Alpha draws each cell as "# " or "  " -> 2 columns per cell
+    // You asked: H = (xterm rows - 1)
+    const H = Math.max(5, rows - 2);
+
+    // Width: fit in available columns (2 chars per cell), leave a tiny safety margin
+    const W = Math.max(5, Math.floor((cols) / 2) - 1);
+
+    // Replace the W = <num>; and H = <num>; lines in the Alpha source
+    let out = code;
+    out = out.replace(/^\s*W\s*=\s*\d+\s*;/m, `W = ${W};`);
+    out = out.replace(/^\s*H\s*=\s*\d+\s*;/m, `H = ${H};`);
+
+    return out;
 }
 
 async function loadExample(url) {
     const res = await fetch(url + '?cb=' + Date.now());
-    const code = await res.text();
+    let code = await res.text();
+    if (url.includes('game_of_life.al')) {
+        code = adjustGameOfLifeResolution(code);
+    }
     putInEditor(code);
+    requestAnimationFrame(relayout);
 }
 
 btnExSyntax.addEventListener('click', () => loadExample('examples/syntax.al'));
-
-btnExLife.addEventListener('click', () => loadExample('examples/game_of_life.al'));
-
 btnExSimple.addEventListener('click', () => loadExample('examples/simple.al'));
+btnExLife.addEventListener('click', () => loadExample('examples/game_of_life.al'));
 
 btnRun.addEventListener('click', async () => {
     if (vmWorker) {
@@ -277,4 +313,7 @@ tglAutoClear.addEventListener('change', () => {
     localStorage.setItem('alpha:autoClear', autoClear ? '1' : '0');
 });
 
-
+const savedCode = localStorage.getItem('alpha:editorCode');
+if (savedCode !== null) {
+    window.editor.setValue(savedCode);
+}

@@ -1,6 +1,6 @@
 W = 47;             /* width  */
 H = 62;             /* height */
-DELAY = 200000;     /* delay between generations */
+DELAY = 500000;     /* delay between generations */
 gen = 0;
 
 function newGrid(w, h) {
