@@ -1,9 +1,14 @@
+/*
+    Conway’s Game of Life in Alpha 
+    https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+*/
+
 /* ---------- config ---------- */
 W = 43;             /* width  */
 H = 35;             /* height */
 DELAY = 1000/60;    /* ~60 FPS in ms */
 DENSITY = 25;       /* % random alive at start (0..100) */
-FLIP_EVERY = 50;    /* gens between flips */ 
+FLIP_EVERY = 30;    /* gens between flips */ 
 FLIP_CELLS = 30;    /* cells to flip each time */
 gen = 0;
 

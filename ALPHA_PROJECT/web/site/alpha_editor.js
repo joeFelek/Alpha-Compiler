@@ -10,7 +10,7 @@
     ];
     const wordOps = ['not', 'and', 'or'];
     const libfuncs = [
-        'print', 'input', 'objectmemberkeys', 'objecttotalmembers', 'objectcopy',
+        'print', 'objectmemberkeys', 'objecttotalmembers', 'objectcopy',
         'totalarguments', 'argument', 'typeof', 'strtonum', 'sqrt', 'cos', 'sin', 
         'trunc', 'random', 'sleep'
     ];

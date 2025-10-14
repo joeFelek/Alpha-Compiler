@@ -1,4 +1,3 @@
-// NOTE: loaded after monaco in index.js; uses global `window.editor`
 const $ = (sel) => document.querySelector(sel);
 
 /* ---------- Terminal (xterm.js) ---------- */
@@ -27,7 +26,6 @@ window.addEventListener('resize', () => {
     cancelAnimationFrame(rId);
     rId = requestAnimationFrame(relayout);
 });
-// First layout pass after initial paint
 setTimeout(relayout, 0);
 
 /* ---------- Simple writers (strings only) ---------- */
@@ -235,32 +233,21 @@ function putInEditor(code) {
     window.editor.focus();
 }
 
-function adjustExampleResolution(code) {
-    // xterm.js exposes current geometry
-    const rows = (typeof term !== "undefined" && term && term.rows) ? term.rows : 24;
-    const cols = (typeof term !== "undefined" && term && term.cols) ? term.cols : 80;
-
-    // Alpha draws each cell as "# " or "  " -> 2 columns per cell
-    // You asked: H = (xterm rows - 1)
-    const H = rows - 2;
-
-    // Width: fit in available columns (2 chars per cell), leave a tiny safety margin
-    const W = Math.floor(cols / 2);
-
-    // Replace the W = <num>; and H = <num>; lines in the Alpha source
+// Replace the W = <num>; and H = <num>; lines in the Alpha source
+function adjustExampleResolution(code, charPerCell) {
+    const H = term.rows - 2;
+    const W = Math.floor(term.cols / charPerCell);
     let out = code;
     out = out.replace(/^\s*W\s*=\s*\d+\s*;/m, `W = ${W};`);
     out = out.replace(/^\s*H\s*=\s*\d+\s*;/m, `H = ${H};`);
-
     return out;
 }
 
 async function loadExample(url) {
     const res = await fetch(url + '?cb=' + Date.now());
     let code = await res.text();
-    if (!url.includes('syntax.al')) {
-        code = adjustExampleResolution(code);
-    }
+    if (url.includes('game_of_life.al')) code = adjustExampleResolution(code, 2);
+    if (url.includes('donut.al')) code = adjustExampleResolution(code, 1);
     putInEditor(code);
     requestAnimationFrame(relayout);
 }
@@ -285,7 +272,7 @@ btnRun.addEventListener('click', async () => {
         if (autoClear) term.write('\x1b[2J\x1b[3J\x1b[H');
         const byteCode = await compileSource();
         if (byteCode === null) return;
-        
+
         // Change to stop state (red)
         btnRun.textContent = 'Stop';
         btnRun.classList.remove('btn-primary');
@@ -321,4 +308,7 @@ tglAutoClear.addEventListener('change', () => {
 const savedCode = localStorage.getItem('alpha:editorCode');
 if (savedCode !== null) {
     window.editor.setValue(savedCode);
+}
+else {
+    loadExample('examples/introduction.al');
 }

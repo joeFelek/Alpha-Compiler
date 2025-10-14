@@ -1,6 +1,10 @@
+/*
+    Alpha Donut
+    Made with the help of https://www.a1k0n.net/2011/07/20/donut-math.html
+*/
+
 /* ---------- config ---------- */
-W = 77;
-W = W * 2; 
+W = 77; 
 H = 61;
 
 PI = 3.141592653589793;

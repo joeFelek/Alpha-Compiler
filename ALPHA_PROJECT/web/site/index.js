@@ -2,7 +2,7 @@ require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0
 
 require(['vs/editor/editor.main'], function () {
     window.editor = monaco.editor.create(document.getElementById('editor'), {
-        value: `// Type your Alpha program here`,
+        value: '',
         language: 'plaintext',   // will switch to 'alpha' after it registers
         theme: 'vs-dark',
         automaticLayout: true,
