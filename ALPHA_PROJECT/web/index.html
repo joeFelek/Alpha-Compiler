@@ -4,23 +4,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alpha Online</title>
+  <title>Alpha Online Compiler</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="site/favicon.ico">
   <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
 </head>
 
 <body>
-  <!-- Run button now inside the layout -->
+  <a class="gh-btn" href="https://github.com/joeFelek/Alpha-Compiler" target="_blank" rel="noopener"
+    aria-label="Open GitHub repository" title="GitHub">
+    <!-- Github logo (SVG) -->
+    <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true">
+      <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38
+      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+      0-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
+      0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 012 0c1.53-1.03 2.2-.82
+      2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.74.54 1.49
+      0 1.07-.01 1.93-.01 2.19 0 .21.15.46.55.38A8 8 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  </a>
+
   <div class="run-button-container">
     <button id="btn-run" class="btn btn-primary run-button">Run</button>
   </div>
 
   <main class="layout">
+
     <section class="editor-panel">
       <div class="panel editor">
-
-        <!-- NEW: header row with example buttons -->
         <div class="editor-header">
           <h2>Editor</h2>
           <div class="actions">
@@ -29,14 +40,13 @@
             <button id="btn-ex-donut" class="chip">Alpha Donut</button>
           </div>
         </div>
-
         <div class="editor-shell">
           <div id="editor"></div>
         </div>
       </div>
     </section>
 
-    <section class="right-panel">
+    <section class="console-panel">
       <div class="panel console">
         <div class="console-header">
           <h2>Output</h2>
@@ -49,10 +59,10 @@
             <button id="btn-clear" class="btn btn-ghost small">Clear Output</button>
           </div>
         </div>
-
         <div id="term" class="term-frame"></div>
       </div>
     </section>
+
   </main>
 
   <script src="https://unpkg.com/xterm/lib/xterm.js"></script>

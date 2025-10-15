@@ -13,18 +13,12 @@
   --accent: #6a7dff;
   --warn: #ff5d6c;
 
-  /* Layout vars */
   --outer-pad: clamp(16px, 2vw, 32px);
-  /* background margin around the app */
   --panel-gap: 16px;
-  /* space between the two panels */
   --run-h: 48px;
-  /* Run button row height */
   --run-gap: 16px;
-  /* space under Run row */
 }
 
-/* Reset */
 * {
   box-sizing: border-box;
   scrollbar-color: #414a70 transparent;
@@ -37,13 +31,10 @@ body {
   margin: 0;
 }
 
-/* ===== Page layout: flex column fills viewport, but can scroll if needed ===== */
 body {
   display: flex;
-  /* page is a column */
   flex-direction: column;
   min-height: 100dvh;
-  /* fill at least the viewport */
   padding: var(--outer-pad);
   color: var(--text);
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", Arial;
@@ -52,10 +43,8 @@ body {
     radial-gradient(1000px 600px at 90% 0%, #251a42 0%, transparent 55%),
     linear-gradient(180deg, var(--bg-0), var(--bg-1));
   overflow: auto;
-  /* IMPORTANT: allow scroll on small windows */
 }
 
-/* ===== Run Button row ===== */
 .run-button-container {
   width: 100%;
   height: var(--run-h);
@@ -88,23 +77,18 @@ body {
   transform: translateY(2px);
 }
 
-/* ===== Main grid: fills remaining height but can grow (no clipping) ===== */
 main.layout {
   flex: 1;
-  /* take remaining space */
   min-height: calc(100dvh - (var(--outer-pad) * 2) - var(--run-h) - var(--run-gap));
-  /* ^ At least a screenful; can grow beyond if content requires */
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  /* stretch rows to column height */
   gap: var(--panel-gap);
   max-width: none;
   margin: 0;
   align-content: stretch;
 }
 
-/* ===== Panels ===== */
 .panel {
   background: linear-gradient(180deg, var(--panel), var(--panel-elev));
   border: 1px solid var(--panel-border);
@@ -114,12 +98,9 @@ main.layout {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* allow shrink inside grid */
   min-height: 0;
-  /* allow vertical flex children to shrink */
 }
 
-/* For panels that put an <h2> directly inside (not the header rows) */
 .panel>h2 {
   margin: 0 0 12px;
   font-size: .95rem;
@@ -130,7 +111,6 @@ main.layout {
   padding-bottom: 10px;
 }
 
-/* ===== Editor ===== */
 .editor-panel {
   display: flex;
   flex-direction: column;
@@ -144,7 +124,6 @@ main.layout {
   min-height: 0;
 }
 
-/* Header row (title + example chips) */
 .editor-header {
   display: flex;
   align-items: center;
@@ -171,7 +150,6 @@ main.layout {
   flex-wrap: wrap;
 }
 
-/* compact “chip” buttons */
 .chip {
   border: 1px solid rgba(255, 255, 255, .12);
   background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .05));
@@ -199,13 +177,11 @@ main.layout {
 
 .editor-shell {
   flex: 1;
-  /* fill remaining panel space */
   border: 1px solid #2b3356;
   border-radius: 12px;
   background: #1e1e1e;
   overflow: hidden;
   min-height: 0;
-  /* allow to shrink on short windows */
 }
 
 #editor {
@@ -225,8 +201,7 @@ main.layout {
   overflow: hidden;
 }
 
-/* ===== Console / Output ===== */
-.right-panel {
+.console-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -239,7 +214,6 @@ main.layout {
   min-height: 0;
 }
 
-/* Full-width divider on the row (not just the <h2>) */
 .console-header {
   display: flex;
   justify-content: space-between;
@@ -265,7 +239,6 @@ main.layout {
   font-size: .8rem;
 }
 
-/* Terminal frame */
 .term-frame {
   flex: 1;
   border: 1px solid var(--panel-border);
@@ -299,7 +272,6 @@ main.layout {
   padding-bottom: 0 !important;
 }
 
-/* ===== Buttons base ===== */
 .btn {
   border: 0;
   border-radius: 12px;
@@ -328,7 +300,6 @@ main.layout {
   transform: translateY(1px);
 }
 
-/* Stop button (if used) */
 .btn-stop {
   color: #fff;
   background: linear-gradient(180deg, #ff4c4c, #c92424);
@@ -343,7 +314,6 @@ main.layout {
   transform: translateY(1px);
 }
 
-/* Scrollbars */
 *::-webkit-scrollbar {
   height: 10px;
   width: 10px;
@@ -362,7 +332,6 @@ main.layout {
   background: transparent;
 }
 
-/* ===== Console header right side ===== */
 .console-tools {
   display: flex;
   align-items: center;
@@ -373,9 +342,6 @@ main.layout {
   margin-right: 12px;
 }
 
-/* extra space before Clear */
-
-/* ===== Toggle (geometry only; colors preserved) ===== */
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -391,7 +357,6 @@ main.layout {
   display: none;
 }
 
-/* Track with crisp ring that stays visible */
 .toggle .track {
   width: 42px;
   height: 24px;
@@ -406,7 +371,6 @@ main.layout {
   transition: background .2s ease, border-color .2s ease;
 }
 
-/* Thumb: exact fit, perfectly centered vertically */
 .toggle .thumb {
   position: absolute;
   top: 50%;
@@ -421,7 +385,6 @@ main.layout {
   transition: left .2s ease, right .2s ease, background .2s ease, box-shadow .2s ease;
 }
 
-/* ON: symmetric gutter using right:2px */
 .toggle input:checked+.track {
   background: #3b56ff;
   border-color: rgba(255, 255, 255, .20);
@@ -433,12 +396,12 @@ main.layout {
   background: #e7ecff;
 }
 
-/* ===== Responsive breakpoints ===== */
-/* === Small screens (≤1200px) — fill viewport, no bottom overflow === */
-@media (max-width:1200px){
-  :root{ --outer-pad: clamp(12px, 3.5vw, 20px); }
+@media (max-width:1200px) {
+  :root {
+    --outer-pad: clamp(12px, 3.5vw, 20px);
+  }
 
-  body{
+  body {
     padding: var(--outer-pad);
     display: flex;
     flex-direction: column;
@@ -446,70 +409,117 @@ main.layout {
     overflow: auto;
   }
 
-  /* Run stays centered */
-  .run-button-container{
-    display:flex; justify-content:center; align-items:center;
+  .run-button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     height: var(--run-h);
     margin: 0 0 var(--run-gap) 0;
   }
 
-  /* MAIN fills remaining viewport height and stacks */
-  main.layout{
-    display:flex;
-    flex-direction:column;
+  main.layout {
+    display: flex;
+    flex-direction: column;
     gap: var(--panel-gap);
     height: calc(100dvh - (var(--outer-pad) * 2) - var(--run-h) - var(--run-gap));
     min-height: 0;
     margin: 0;
   }
 
-  /* >>> THIS is the missing piece: the WRAPPERS must flex too <<< */
   .editor-panel,
-  .right-panel{
-    display:flex;               /* become flex columns */
-    flex-direction:column;
-    flex: 1 1 0;                /* take equal share of main.layout height */
-    min-height:0;               /* allow shrinking */
-    min-width:0;
+  .console-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
   }
 
-  /* Panels live inside the wrappers and must also flex */
-  .panel{
-    display:flex;
-    flex-direction:column;      /* header + content */
-    flex: 1 1 0;                /* fill the wrapper’s space */
-    min-height:0;
-    overflow:hidden;            /* clip to rounded corners */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
   }
 
-  /* Compact, wrapping headers */
   .editor-header,
-  .console-header{
-    flex:0 0 auto;
-    margin:0;
-    padding-bottom:10px;
-    border-bottom:1px solid rgba(255,255,255,.05);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    flex-wrap:wrap;
-    row-gap:6px;
+  .console-header {
+    flex: 0 0 auto;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
-  .editor-header .actions,
-  .console-tools{ flex-wrap:wrap; row-gap:6px; }
 
-  /* Content fills remaining panel height; never bleeds */
+  .editor-header .actions,
+  .console-tools {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
   .editor-shell,
-  .term-frame{
-    flex: 1 1 0;        /* take all remaining space in the panel */
-    min-height: 0;      /* allow shrinking with viewport */
-    overflow: hidden;   /* keep inside rounded border */
+  .term-frame {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
     border-radius: 12px;
   }
 
-  /* Inner apps fill their containers */
-  #editor{ height:100%; }
-  .term-frame .xterm{ width:100% !important; height:100% !important; }
-  .term-frame .xterm-viewport{ height:auto !important; padding-bottom:0 !important; }
+  #editor {
+    height: 100%;
+  }
+
+  .term-frame .xterm {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .term-frame .xterm-viewport {
+    height: auto !important;
+    padding-bottom: 0 !important;
+  }
+}
+
+.gh-btn {
+  position: fixed;
+  top: var(--outer-pad);
+  right: var(--outer-pad);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  text-decoration: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .04));
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .06);
+  transition: transform .06s ease, filter .15s ease, box-shadow .2s ease;
+  z-index: 50;
+}
+
+.gh-btn:hover {
+  filter: brightness(1.08);
+}
+
+.gh-btn:active {
+  transform: translateY(1px);
+}
+
+.gh-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--ring-soft), 0 0 0 1px var(--ring);
+}
+
+@media (max-width:1200px) {
+  .gh-btn {
+    top: var(--outer-pad);
+    right: var(--outer-pad);
+  }
 }
