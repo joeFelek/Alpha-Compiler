@@ -11,8 +11,8 @@
     const wordOps = ['not', 'and', 'or'];
     const libfuncs = [
         'print', 'objectmemberkeys', 'objecttotalmembers', 'objectcopy',
-        'totalarguments', 'argument', 'typeof', 'strtonum', 'sqrt', 'cos', 'sin', 
-        'trunc', 'random', 'sleep'
+        'totalarguments', 'argument', 'typeof', 'strtonum', 'sqrt', 'cos', 'sin',
+        'trunc', 'random', 'sleep', 'width', 'height'
     ];
     const operators = [
         '+', '-', '*', '/', '%', '=', '==', '!=', '<', '>', '<=', '>=',
@@ -395,6 +395,4 @@
         ]
     });
 
-    monaco.editor.setTheme('alpha-one-dark');
-    monaco.editor.setModelLanguage(window.editor.getModel(), 'alpha');
 })();

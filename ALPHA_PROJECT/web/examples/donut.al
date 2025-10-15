@@ -4,8 +4,8 @@
 */
 
 /* ---------- config ---------- */
-W = 77; 
-H = 61;
+W = width();      /* width */
+H = height();     /* height */
 
 PI = 3.141592653589793;
 theta_spacing = 0.07;   /* radians */
@@ -76,7 +76,7 @@ function render_frame(A, B) {
     }
 }
 
-/* main loop */
+/* ---------- main loop ----------*/
 A = 0.0; B = 0.0;
 print("\x1b[2J\x1b[3J\x1b[H");
 while (true) {

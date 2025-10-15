@@ -68,8 +68,8 @@ a = 5; b = 2;
 print("a+b=", a+b, " a-b=", a-b, " a*b=", a*b, " a/b=", a/b, " a%b=", a%b, "\n");
 print("a==5?", a==5, " a!=b?", a!=b, " a>b?", a>b, "\n");
 
-// boolean short-circuit
-x = false and true;
+// boolean
+x = false and not true;
 y = true or false;
 print("x=", x, " y=", y, "\n");
 
@@ -181,9 +181,7 @@ numStr = "123.50";
 numVal = strtonum(numStr);     // parse string to number
 print("strtonum(\"", numStr, "\") = ", numVal, "\n\n");
 
-
-/* 8) Mutation */
-
+// shallow copy
 p = [
     {"x": 0}, 
     {"y": 0},
@@ -196,12 +194,15 @@ p = [
 p.move(3, -2);
 print("p=(" , p.x, ",", p.y, ")\n");
 
-// shallow copy
 p2 = objectcopy(p);
 p2.x = 999;
 print("p.x=", p.x, " p2.x=", p2.x, "\n\n");
 
-/* 9) Sleep */
+// console width and height
+print("current console width: ", width(), "\n");
+print("current console height: ", height(), "\n\n");
+
+// sleep
 print("sleep for 3 seconds...\n");
 for (s = 1; s < 4; ++s) {
     sleep(1000);
