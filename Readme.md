@@ -18,6 +18,15 @@ This project contains the source code of the Alpha programming language compiler
 
 Alpha is a dynamically typed, imperative, block-structured language with a syntax inspired by C and modern scripting languages. It was originally designed as part of a university compiler course.<br>
 
+#### Language Features
+- Variables and expressions with dynamic types (`number`, `string`, `bool`, `nil`, `table`, `array`, `function`)
+- Functions (named and anonymous), scoping, and closures
+- Control flow: `if`, `else`, `while`, `for`, `break`, `continue`, `return`
+- Array and map constructors
+- Operator precedence for arithmetic, comparison, logical, and unary operators
+- Various library functions
+- Compiles to a custom bytecode format executed by a stack-based VM
+- Automatic garbage colection
 ```javascript
 function Fibonacci(n) {
     if (n <= 1) return n;
@@ -41,19 +50,17 @@ print("Fibonacci(", inter, ") = ", math_funcs.fib(inter), "\n");   // Fibonacci(
 print("Factorial(", inter, ") = ", math_funcs.fac(inter), "\n");   // Factorial(10) = 3628800
 ```
 
-#### Language Features
-- Variables and expressions with dynamic types (`number`, `string`, `bool`, `nil`, `table`, `array`, `function`)
-- Functions (named and anonymous), scoping, and closures
-- Control flow: `if`, `else`, `while`, `for`, `break`, `continue`, `return`
-- Array and map constructors
-- Operator precedence for arithmetic, comparison, logical, and unary operators
-- Various library functions
-- Compiles to a custom bytecode format executed by a stack-based VM
-- Automatic garbage colection
-
 
 #### Project Features
-- Alpha compiler and virtual machine written in C 
-- In-browser code editor with syntax highlighting and autocomplete for the Alpha language
-- Alpha code examples you can run to see how the language works
-- Entirely client-side no server needed
+- Compiler and VM written in C up and running in the browser using Emscripten compile to wasm.
+- Monaco editor configured for the alpha language with syntax highlighting, autocomplete and one dark pro theme.
+- Xterm terminal with support calling `width()` and `height()` functions from alpha code to get the current resolution of the terminal.
+- Responsive UI design with run/stop button, github, 3 auto load example buttons, auto clear toggle and clear terminal toggle.
+- Intruction, syntax and 2 complete examples writen in alpha (game of life, donut).
+- Entirely client-side no server needed.
+
+<img width="2558" height="1297" alt="image" src="https://github.com/user-attachments/assets/96789c87-d62a-4aef-9515-d436cf1da0e6" /><div id="top"></div>
+
+
+### MIT License
+This project comes with the MIT license, you are free to use, change and publish any part of it. Have fun experimenting!
