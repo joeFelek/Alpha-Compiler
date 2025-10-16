@@ -1,13 +1,13 @@
 <div id="top"></div>
 
-<h2 align="center">Alpha Online</h2>
-<h4 align="center">Text Editor and C-based Compiler/VM in WebAssembly</h4>
-
+<h2 align="center">Alpha Online Compiler</h2>
 <p align="center">
   <a href="https://joefelek.github.io/Alpha-Compiler/" target="_blank" rel="noopener">
     <img alt="Live Demo" src="https://img.shields.io/badge/Live%20Demo-Open-brightgreen?style=for-the-badge">
   </a>
 </p>
+<h4 align="center">Code editor + C-based compiler & VM in WebAssembly</h4>
+
 
 <br>
 
@@ -53,7 +53,7 @@ print("Factorial(", inter, ") = ", math_funcs.fac(inter), "\n");   // Factorial(
 
 
 #### Project Features
-- Alpha compiler and VM written in C 
+- Alpha compiler and virtual machine written in C 
 - In-browser code editor with syntax highlighting and autocomplete for the Alpha language
 - Alpha code examples you can run to see how the language works
-- Entirely client-side — no server needed
+- Entirely client-side no server needed

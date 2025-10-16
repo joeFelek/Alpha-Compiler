@@ -8,41 +8,6 @@
     const GREY = '\x1b[38;5;247m';
     const RESET = '\x1b[0m';
 
-    /* ---------- Create Editor ---------- */
-    // Load stored editor's code
-    const savedCode = localStorage.getItem('alpha:editorCode');
-
-    window.editor = monaco.editor.create($('#editor'), {
-        value: savedCode ? savedCode : '',
-        language: 'alpha',
-        theme: 'alpha-one-dark',
-        automaticLayout: true,
-        fontSize: 14,
-        minimap: { enabled: true },
-        autoIndent: 'full',
-        autoClosingBrackets: 'languageDefined',
-        mouseWheelZoom: true,
-    });
-
-    if (savedCode === null) loadExample('examples/introduction.al');
-
-    // Store editor's current code &
-    // Remove diagnostic error/warning if the line is edited
-    window.editor.onDidChangeModelContent((e) => {
-        localStorage.setItem('alpha:editorCode', window.editor.getValue());
-
-        const diags = window.Alpha.Diagnostics.currentDiags;
-        if (!diags.length) return;
-
-        const touched = new Set();
-        for (const ch of e.changes) {
-            for (let ln = ch.range.startLineNumber; ln <= ch.range.endLineNumber; ln++) touched.add(ln);
-        }
-
-        const filtered = diags.filter(d => !touched.has(d.line));
-        if (filtered.length !== diags.length) setAlphaMarkers(filtered, { jumpNow: false });
-    });
-
     /* --- Editor & Terminal Relayout --- */
     function relayout() {
         window.editor.layout();
@@ -101,8 +66,25 @@
     }
 
     /* ---------- Compile on Run ---------- */
+    let compilerReady = false;
+
+    function ensureCompilerLoaded() {
+        if (compilerReady) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'alphac.js';
+            s.onload = () => { compilerReady = true; resolve(); };
+            s.onerror = reject;
+            document.body.appendChild(s);
+        });
+    }
+
     async function compileSource() {
         let capturedStderr = '';
+
+        // Load compiler only when first needed
+        await ensureCompilerLoaded();
+
         const compiler = await CompilerModule({
             print: (t) => term.writeln(t),
             printErr: (t) => { capturedStderr += (t || '') + '\n'; term.writeln(t); },

@@ -272,88 +272,90 @@
     });
 
     // Autocomplete 
-    monaco.languages.registerCompletionItemProvider('alpha', {
-        triggerCharacters: ['.', '(', ' '],
-        provideCompletionItems: (model, position) => {
-            const word = model.getWordUntilPosition(position);
-            const range = {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn
-            };
+    const registerCompletion = () => {
+        monaco.languages.registerCompletionItemProvider('alpha', {
+            triggerCharacters: ['.', '(', ' '],
+            provideCompletionItems: (model, position) => {
+                const word = model.getWordUntilPosition(position);
+                const range = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn
+                };
 
-            const text = model.getValue();
-            const varMatches = [...text.matchAll(/\b(?:local\s+)?([a-zA-Z_]\w*)\s*=/g)];
-            const userVars = [...new Set(varMatches.map(m => m[1]))];
-            const funcMatches = [...text.matchAll(/\bfunction\s+([a-zA-Z_]\w*)\s*\(/g)];
-            const userFuncs = [...new Set(funcMatches.map(m => m[1]))];
+                const text = model.getValue();
+                const varMatches = [...text.matchAll(/\b(?:local\s+)?([a-zA-Z_]\w*)\s*=/g)];
+                const userVars = [...new Set(varMatches.map(m => m[1]))];
+                const funcMatches = [...text.matchAll(/\bfunction\s+([a-zA-Z_]\w*)\s*\(/g)];
+                const userFuncs = [...new Set(funcMatches.map(m => m[1]))];
 
-            const suggestions = [
-                // user vars first
-                ...userVars.map(v => ({
-                    label: v,
-                    kind: monaco.languages.CompletionItemKind.Variable,
-                    insertText: v,
-                    detail: 'User variable',
-                    sortText: '1_' + v,
-                    range
-                })),
+                const suggestions = [
+                    // user vars first
+                    ...userVars.map(v => ({
+                        label: v,
+                        kind: monaco.languages.CompletionItemKind.Variable,
+                        insertText: v,
+                        detail: 'User variable',
+                        sortText: '1_' + v,
+                        range
+                    })),
 
-                // user functions
-                ...userFuncs.map(fn => ({
-                    label: fn,
-                    kind: monaco.languages.CompletionItemKind.Function,
-                    insertText: fn + '($0)',
-                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                    detail: 'User function',
-                    sortText: '2_' + fn,
-                    range
-                })),
+                    // user functions
+                    ...userFuncs.map(fn => ({
+                        label: fn,
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: fn + '($0)',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        detail: 'User function',
+                        sortText: '2_' + fn,
+                        range
+                    })),
 
-                // keywords
-                ...keywords.map(k => ({
-                    label: k,
-                    kind: monaco.languages.CompletionItemKind.Keyword,
-                    insertText: k,
-                    sortText: '3_' + k,
-                    detail: 'Keyword',
-                    range
-                })),
+                    // keywords
+                    ...keywords.map(k => ({
+                        label: k,
+                        kind: monaco.languages.CompletionItemKind.Keyword,
+                        insertText: k,
+                        sortText: '3_' + k,
+                        detail: 'Keyword',
+                        range
+                    })),
 
-                // word operators and constants
-                ...wordOps.map(op => ({
-                    label: op,
-                    kind: monaco.languages.CompletionItemKind.Operator,
-                    insertText: op,
-                    sortText: '4_' + op,
-                    detail: 'Logic operator',
-                    range
-                })),
-                ...['true', 'false', 'nil'].map(val => ({
-                    label: val,
-                    kind: monaco.languages.CompletionItemKind.Constant,
-                    insertText: val,
-                    sortText: '5_' + val,
-                    detail: 'Constant',
-                    range
-                })),
+                    // word operators and constants
+                    ...wordOps.map(op => ({
+                        label: op,
+                        kind: monaco.languages.CompletionItemKind.Operator,
+                        insertText: op,
+                        sortText: '4_' + op,
+                        detail: 'Logic operator',
+                        range
+                    })),
+                    ...['true', 'false', 'nil'].map(val => ({
+                        label: val,
+                        kind: monaco.languages.CompletionItemKind.Constant,
+                        insertText: val,
+                        sortText: '5_' + val,
+                        detail: 'Constant',
+                        range
+                    })),
 
-                // library functions
-                ...libfuncs.map(fn => ({
-                    label: fn,
-                    kind: monaco.languages.CompletionItemKind.Function,
-                    insertText: fn + '($0)',
-                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                    detail: 'Library function',
-                    sortText: '6_' + fn,
-                    range
-                }))
-            ];
+                    // library functions
+                    ...libfuncs.map(fn => ({
+                        label: fn,
+                        kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: fn + '($0)',
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        detail: 'Library function',
+                        sortText: '6_' + fn,
+                        range
+                    }))
+                ];
 
-            return { suggestions };
-        }
-    });
+                return { suggestions };
+            }
+        });
+    }
 
     // One Dark theme
     monaco.editor.defineTheme('alpha-one-dark', {
@@ -393,6 +395,48 @@
             { token: 'string.escape', foreground: '56B6C2' },
             { token: 'string.escape.invalid', foreground: 'F44747' },
         ]
+    });
+
+    // Create Editor
+    const savedCode = localStorage.getItem('alpha:editorCode');
+
+    window.editor = monaco.editor.create(document.getElementById('editor'), {
+        value: savedCode ? savedCode : '',
+        language: 'alpha',
+        theme: 'alpha-one-dark',
+        automaticLayout: true,
+        fontSize: 14,
+        minimap: { enabled: true },
+        autoIndent: 'full',
+        autoClosingBrackets: 'languageDefined',
+        mouseWheelZoom: true,
+    });
+
+    if (savedCode === null) {
+        window.Alpha.Utils.loadExample('examples/introduction.al');
+    }
+
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(registerCompletion, { timeout: 1500 });
+    } else {
+        setTimeout(registerCompletion, 0);
+    }
+
+    // Store editor's current code &
+    // Remove diagnostic error/warning if the line is edited
+    window.editor.onDidChangeModelContent((e) => {
+        localStorage.setItem('alpha:editorCode', window.editor.getValue());
+
+        const diags = window.Alpha.Diagnostics.currentDiags;
+        if (!diags.length) return;
+
+        const touched = new Set();
+        for (const ch of e.changes) {
+            for (let ln = ch.range.startLineNumber; ln <= ch.range.endLineNumber; ln++) touched.add(ln);
+        }
+
+        const filtered = diags.filter(d => !touched.has(d.line));
+        if (filtered.length !== diags.length) window.Alpha.Diagnostics.setAlphaMarkers(filtered, { jumpNow: false });
     });
 
 })();

@@ -6,7 +6,7 @@
 /* ---------- config ---------- */
 W = trunc(width() / 2);    /* width / 2 (two chars per cell)*/
 H = height();              /* height */
-DELAY = 1000/60;           /* ~60 FPS in ms */
+DELAY = 1000/13;           /* delay between gens in ms */
 DENSITY = 25;              /* % random alive at start (0..100) */
 FLIP_EVERY = 30;           /* gens between flips */ 
 FLIP_CELLS = 30;           /* cells to flip each time */
