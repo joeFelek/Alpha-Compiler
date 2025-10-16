@@ -1,10 +1,16 @@
 <div id="top"></div>
 
 <h2 align="center">Alpha Online</h2>
-
 <h4 align="center">Text Editor and C-based Compiler/VM in WebAssembly</h4>
 
+<p align="center">
+  <a href="https://joefelek.github.io/Alpha-Compiler/" target="_blank" rel="noopener">
+    <img alt="Live Demo" src="https://img.shields.io/badge/Live%20Demo-Open-brightgreen?style=for-the-badge">
+  </a>
+</p>
+
 <br>
+
 
 This project contains the source code of the Alpha programming language compiler and virtual machine, written in C. It brings Alpha to the browser by compiling both to WebAssembly, allowing you to write, compile, and run Alpha code entirely client-side.
 
@@ -47,7 +53,7 @@ print("Factorial(", inter, ") = ", math_funcs.fac(inter), "\n");   // Factorial(
 
 
 #### Project Features
-- Alpha compiler (Flex/Bison) and VM written in C 
+- Alpha compiler and VM written in C 
 - In-browser code editor with syntax highlighting and autocomplete for the Alpha language
 - Alpha code examples you can run to see how the language works
 - Entirely client-side — no server needed
